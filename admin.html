@@ -89,7 +89,6 @@
   .loading-overlay.active { display: flex; }
   .spinner { width: 40px; height: 40px; border: 3px solid #fff; border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
-
   @media (max-width: 600px) { body { padding: 12px; } .section { padding: 14px; } .tab { padding: 8px 8px; font-size: 0.75rem; } }
 </style>
 </head>
@@ -105,16 +104,15 @@
 
 <div id="adminView" class="container" style="display:none;">
   <h1>管理后台</h1>
-  <div class="tabs" id="tabBar">
+  <div class="tabs">
     <button class="tab active" onclick="switchTab('incoming')">来件管理</button>
     <button class="tab" onclick="switchTab('shipping')">寄件管理</button>
     <button class="tab" onclick="switchTab('pickedup')">已取货</button>
     <button class="tab" onclick="switchTab('shipped')">已寄出</button>
-    <button class="tab" onclick="switchTab('history')">历史取货单</button>
+    <button class="tab" onclick="switchTab('history')">历史档案</button>
     <button class="tab" onclick="switchTab('products')">产品管理</button>
   </div>
 
-  <!-- 来件管理 -->
   <div id="tab-incoming" class="tab-content active">
     <div class="toolbar">
       <div class="toolbar-left">
@@ -127,7 +125,6 @@
     <div class="section"><div class="table-wrap" id="incomingTableWrap"></div></div>
   </div>
 
-  <!-- 寄件管理 -->
   <div id="tab-shipping" class="tab-content">
     <div class="toolbar">
       <div class="toolbar-left">
@@ -140,7 +137,6 @@
     <div class="section"><div class="table-wrap" id="shippingTableWrap"></div></div>
   </div>
 
-  <!-- 已取货 -->
   <div id="tab-pickedup" class="tab-content">
     <div class="toolbar">
       <div class="toolbar-left"><span id="pickedupCount"></span></div>
@@ -149,7 +145,6 @@
     <div class="section"><div class="table-wrap" id="pickedupTableWrap"></div></div>
   </div>
 
-  <!-- 已寄出 -->
   <div id="tab-shipped" class="tab-content">
     <div class="toolbar">
       <div class="toolbar-left"><span id="shippedCount"></span></div>
@@ -158,7 +153,6 @@
     <div class="section"><div class="table-wrap" id="shippedTableWrap"></div></div>
   </div>
 
-  <!-- 历史取货单 -->
   <div id="tab-history" class="tab-content">
     <div class="toolbar">
       <div class="toolbar-left"><span id="historyCount"></span></div>
@@ -167,7 +161,6 @@
     <div class="section"><div id="historyList"></div></div>
   </div>
 
-  <!-- 产品管理 -->
   <div id="tab-products" class="tab-content">
     <div class="section">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
@@ -180,7 +173,6 @@
   </div>
 </div>
 
-<!-- Export Incoming Modal -->
 <div class="modal-overlay" id="exportModal">
   <div class="modal">
     <h3>导出来件提货单</h3>
@@ -188,36 +180,36 @@
     <div class="form-group"><label>提货人</label><input type="text" id="exportPerson" placeholder="提货人姓名" style="width:100%;"></div>
     <div class="modal-actions">
       <button class="btn btn-outline" onclick="closeModal('exportModal')">取消</button>
-      <button class="btn btn-accent" id="doExportBtn" onclick="doExportIncomingPDF()">导出</button>
+      <button class="btn btn-accent" onclick="doExportIncomingPDF()">导出</button>
     </div>
   </div>
 </div>
 
-<!-- Hidden render area -->
 <div id="pdfRender" style="position:absolute;left:-9999px;top:0;width:800px;"></div>
-
 <div class="toast" id="toast"></div>
 <div class="loading-overlay" id="loading"><div class="spinner"></div></div>
 
 <script>
+// ============================================================
+// 配置区域 (与 index.html 保持一致)
+// ============================================================
 const CONFIG = {
-const CONFIG = {
-  owner: 'marcel-iam',
-  repo: 'chancf111',
-  token: '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',
+  owner: '你的GitHub用户名',
+  repo:  '你的仓库名',
+  _k:    '在这里粘贴base64编码后的token',
   password: '456456',
-  ordersPath: 'orders.json',
-  productsPath: 'products.json',
-  historyPickup: 'history_pickup',
-  historyShipping: 'history_shipping',
 };
-const API = `https://gitee.com/api/v5/repos/${CONFIG.owner}/${CONFIG.repo}/contents`;
-const RAW_BASE = `https://gitee.com/${CONFIG.owner}/${CONFIG.repo}/raw/master`;
+
+const TOKEN = atob(CONFIG._k);
+const API = `https://api.github.com/repos/${CONFIG.owner}/${CONFIG.repo}/contents`;
+const HEADERS = { 'Content-Type': 'application/json', 'Authorization': `token ${TOKEN}` };
+const HISTORY_PICKUP = 'history_pickup';
+const HISTORY_SHIPPING = 'history_shipping';
+const TAB_NAMES = ['incoming','shipping','pickedup','shipped','history','products'];
 
 let orders = [];
 let products = [];
 let pendingExportIds = [];
-const TAB_NAMES = ['incoming','shipping','pickedup','shipped','history','products'];
 
 // ===== Auth =====
 function checkPwd() {
@@ -235,9 +227,9 @@ async function initAdmin() {
   showLoading(false);
 }
 
-// ===== Gitee API =====
+// ===== GitHub API =====
 async function fetchFileWithSha(path) {
-  const res = await fetch(`${API}/${path}?access_token=${CONFIG.token}`);
+  const res = await fetch(`${API}/${path}`, { headers: HEADERS });
   if (!res.ok) throw new Error('读取失败');
   const data = await res.json();
   return { content: JSON.parse(atob(data.content)), sha: data.sha };
@@ -245,19 +237,19 @@ async function fetchFileWithSha(path) {
 
 async function updateFile(path, content, sha, message) {
   const res = await fetch(`${API}/${path}`, {
-    method: 'PUT', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ access_token: CONFIG.token, content: btoa(unescape(encodeURIComponent(JSON.stringify(content, null, 2)))), sha, message }),
+    method: 'PUT', headers: HEADERS,
+    body: JSON.stringify({ content: btoa(unescape(encodeURIComponent(JSON.stringify(content, null, 2)))), sha, message }),
   });
   if (!res.ok) { const err = await res.json(); throw new Error(err.message || '写入失败'); }
   return res.json();
 }
 
-async function createBinaryFile(path, base64Content, message) {
+async function createFile(path, base64Content, message) {
   const res = await fetch(`${API}/${path}`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ access_token: CONFIG.token, content: base64Content, message }),
+    method: 'PUT', headers: HEADERS,
+    body: JSON.stringify({ content: base64Content, message }),
   });
-  if (!res.ok) { const err = await res.json(); throw new Error(err.message || '创建文件失败'); }
+  if (!res.ok) { const err = await res.json(); throw new Error(err.message || '创建失败'); }
   return res.json();
 }
 
@@ -274,179 +266,126 @@ async function updateWithRetry(path, mutator, message, maxRetries = 3) {
 
 // ===== Orders =====
 async function loadOrders() {
-  const data = await fetchFileWithSha(CONFIG.ordersPath);
+  const data = await fetchFileWithSha('orders.json');
   orders = data.content;
   orders.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
   renderIncoming(); renderShipping(); renderPickedup(); renderShipped();
 }
 
-function getAllProductIdsFromIncoming(orderList) {
-  const ids = new Set();
-  orderList.forEach(o => o.incoming.products.forEach(p => ids.add(p.product_id)));
-  return [...ids].sort();
-}
+function prodIdsIn(list) { const s = new Set(); list.forEach(o => o.incoming.products.forEach(p => s.add(p.product_id))); return [...s].sort(); }
+function prodIdsOut(list) { const s = new Set(); list.forEach(o => o.outgoing.forEach(r => r.products.forEach(p => s.add(p.product_id)))); return [...s].sort(); }
+function pn(id) { const p = products.find(x => x.id === id); return p ? p.name : id; }
+function sel(g) { return [...document.querySelectorAll(`input[data-group="${g}"]:checked`)].map(c => c.value); }
+function togAll(g, v) { document.querySelectorAll(`input[data-group="${g}"]`).forEach(c => { c.checked = v; }); }
 
-function getAllProductIdsFromOutgoing(orderList) {
-  const ids = new Set();
-  orderList.forEach(o => o.outgoing.forEach(r => r.products.forEach(p => ids.add(p.product_id))));
-  return [...ids].sort();
-}
-
-function getProductName(id) { const p = products.find(x => x.id === id); return p ? p.name : id; }
-
-function getSelectedIds(group) {
-  return [...document.querySelectorAll(`input[data-group="${group}"]:checked`)].map(cb => cb.value);
-}
-
-function toggleAll(group, checked) {
-  document.querySelectorAll(`input[data-group="${group}"]`).forEach(cb => { cb.checked = checked; });
-}
-
-// ===== Incoming Table =====
 function renderIncoming() {
-  const pending = orders.filter(o => !o.picked_up);
-  document.getElementById('incomingCount').textContent = `${pending.length} 个未取货订单`;
-  const wrap = document.getElementById('incomingTableWrap');
-  if (pending.length === 0) { wrap.innerHTML = '<div class="empty-state">没有未取货订单</div>'; return; }
-
-  const prodIds = getAllProductIdsFromIncoming(pending);
-  const totals = {}; prodIds.forEach(id => { totals[id] = 0; });
-
-  let html = '<table class="data-table"><thead><tr>';
-  html += '<th><input type="checkbox" onchange="toggleAll(\'incoming\',this.checked)"></th>';
-  html += '<th>订单号</th><th>取货码</th>';
-  prodIds.forEach(id => { html += `<th class="qty-cell">${getProductName(id)}</th>`; });
-  html += '<th>日期</th></tr></thead><tbody>';
-
-  pending.forEach(o => {
-    const date = new Date(o.created_at).toLocaleDateString('zh-CN');
-    html += `<tr><td><input type="checkbox" data-group="incoming" value="${o.id}"></td>`;
-    html += `<td>${o.incoming.express_code}</td><td>${o.incoming.pickup_code}</td>`;
-    prodIds.forEach(id => {
-      const p = o.incoming.products.find(x => x.product_id === id);
-      const qty = p ? p.quantity : 0; totals[id] += qty;
-      html += `<td class="qty-cell">${qty || ''}</td>`;
-    });
-    html += `<td style="font-size:0.78rem;color:var(--text-light)">${date}</td></tr>`;
+  const p = orders.filter(o => !o.picked_up);
+  document.getElementById('incomingCount').textContent = `${p.length} 个未取货订单`;
+  const w = document.getElementById('incomingTableWrap');
+  if (!p.length) { w.innerHTML = '<div class="empty-state">没有未取货订单</div>'; return; }
+  const pids = prodIdsIn(p); const tot = {}; pids.forEach(id => { tot[id] = 0; });
+  let h = '<table class="data-table"><thead><tr><th><input type="checkbox" onchange="togAll(\'incoming\',this.checked)"></th><th>订单号</th><th>取货码</th>';
+  pids.forEach(id => { h += `<th class="qty-cell">${pn(id)}</th>`; });
+  h += '<th>日期</th></tr></thead><tbody>';
+  p.forEach(o => {
+    h += `<tr><td><input type="checkbox" data-group="incoming" value="${o.id}"></td><td>${o.incoming.express_code}</td><td>${o.incoming.pickup_code}</td>`;
+    pids.forEach(id => { const x = o.incoming.products.find(z => z.product_id === id); const q = x ? x.quantity : 0; tot[id] += q; h += `<td class="qty-cell">${q || ''}</td>`; });
+    h += `<td style="font-size:0.78rem;color:var(--text-light)">${new Date(o.created_at).toLocaleDateString('zh-CN')}</td></tr>`;
   });
-
-  html += '<tr class="total-row"><td></td><td colspan="2">合计</td>';
-  prodIds.forEach(id => { html += `<td class="qty-cell">${totals[id]}</td>`; });
-  html += '<td></td></tr></tbody></table>';
-  wrap.innerHTML = html;
+  h += '<tr class="total-row"><td></td><td colspan="2">合计</td>';
+  pids.forEach(id => { h += `<td class="qty-cell">${tot[id]}</td>`; });
+  h += '<td></td></tr></tbody></table>';
+  w.innerHTML = h;
 }
 
-// ===== Shipping Table (per recipient, grouped by order) =====
 function renderShipping() {
-  const pending = orders.filter(o => !o.shipped);
-  const totalR = pending.reduce((s, o) => s + o.outgoing.length, 0);
-  document.getElementById('shippingCount').textContent = `${pending.length} 个未寄出订单, ${totalR} 个收件人`;
-  const wrap = document.getElementById('shippingTableWrap');
-  if (pending.length === 0) { wrap.innerHTML = '<div class="empty-state">没有未寄出订单</div>'; return; }
-
-  const prodIds = getAllProductIdsFromOutgoing(pending);
-  const totals = {}; prodIds.forEach(id => { totals[id] = 0; });
-
-  let html = '<table class="data-table"><thead><tr>';
-  html += '<th><input type="checkbox" onchange="toggleAll(\'shipping\',this.checked)"></th>';
-  html += '<th>订单号</th><th>收件人</th><th>地址</th><th>电话</th>';
-  prodIds.forEach(id => { html += `<th class="qty-cell">${getProductName(id)}</th>`; });
-  html += '<th>备注</th></tr></thead><tbody>';
-
-  pending.forEach(o => {
-    const rLen = o.outgoing.length;
+  const p = orders.filter(o => !o.shipped);
+  const tr = p.reduce((s, o) => s + o.outgoing.length, 0);
+  document.getElementById('shippingCount').textContent = `${p.length} 个未寄出订单, ${tr} 个收件人`;
+  const w = document.getElementById('shippingTableWrap');
+  if (!p.length) { w.innerHTML = '<div class="empty-state">没有未寄出订单</div>'; return; }
+  const pids = prodIdsOut(p); const tot = {}; pids.forEach(id => { tot[id] = 0; });
+  let h = '<table class="data-table"><thead><tr><th><input type="checkbox" onchange="togAll(\'shipping\',this.checked)"></th><th>订单号</th><th>收件人</th><th>地址</th><th>电话</th>';
+  pids.forEach(id => { h += `<th class="qty-cell">${pn(id)}</th>`; });
+  h += '<th>备注</th></tr></thead><tbody>';
+  p.forEach(o => {
+    const rl = o.outgoing.length;
     o.outgoing.forEach((r, ri) => {
-      html += '<tr>';
-      if (ri === 0) {
-        html += `<td rowspan="${rLen}" style="vertical-align:middle"><input type="checkbox" data-group="shipping" value="${o.id}"></td>`;
-        html += `<td rowspan="${rLen}" style="vertical-align:middle">${o.incoming.express_code}</td>`;
-      }
-      html += `<td>${r.name}</td><td>${r.address}</td><td>${r.phone}</td>`;
-      prodIds.forEach(id => {
-        const p = r.products.find(x => x.product_id === id);
-        const qty = p ? p.quantity : 0; totals[id] += qty;
-        html += `<td class="qty-cell">${qty || ''}</td>`;
-      });
-      html += `<td style="font-size:0.78rem">${r.notes || ''}</td></tr>`;
+      h += '<tr>';
+      if (ri === 0) h += `<td rowspan="${rl}" style="vertical-align:middle"><input type="checkbox" data-group="shipping" value="${o.id}"></td><td rowspan="${rl}" style="vertical-align:middle">${o.incoming.express_code}</td>`;
+      h += `<td>${r.name}</td><td>${r.address}</td><td>${r.phone}</td>`;
+      pids.forEach(id => { const x = r.products.find(z => z.product_id === id); const q = x ? x.quantity : 0; tot[id] += q; h += `<td class="qty-cell">${q || ''}</td>`; });
+      h += `<td style="font-size:0.78rem">${r.notes || ''}</td></tr>`;
     });
   });
-
-  html += '<tr class="total-row"><td></td><td colspan="4">合计</td>';
-  prodIds.forEach(id => { html += `<td class="qty-cell">${totals[id]}</td>`; });
-  html += '<td></td></tr></tbody></table>';
-  wrap.innerHTML = html;
+  h += '<tr class="total-row"><td></td><td colspan="4">合计</td>';
+  pids.forEach(id => { h += `<td class="qty-cell">${tot[id]}</td>`; });
+  h += '<td></td></tr></tbody></table>';
+  w.innerHTML = h;
 }
 
-// ===== Picked Up Table =====
 function renderPickedup() {
-  const picked = orders.filter(o => o.picked_up);
-  document.getElementById('pickedupCount').textContent = `${picked.length} 个已取货订单`;
-  const wrap = document.getElementById('pickedupTableWrap');
-  if (picked.length === 0) { wrap.innerHTML = '<div class="empty-state">没有已取货订单</div>'; return; }
-
-  const prodIds = getAllProductIdsFromIncoming(picked);
-  let html = '<table class="data-table"><thead><tr><th>订单号</th><th>取货码</th>';
-  prodIds.forEach(id => { html += `<th class="qty-cell">${getProductName(id)}</th>`; });
-  html += '<th>日期</th></tr></thead><tbody>';
-  picked.forEach(o => {
-    html += `<tr><td>${o.incoming.express_code}</td><td>${o.incoming.pickup_code}</td>`;
-    prodIds.forEach(id => { const p = o.incoming.products.find(x => x.product_id === id); html += `<td class="qty-cell">${p ? p.quantity : ''}</td>`; });
-    html += `<td style="font-size:0.78rem;color:var(--text-light)">${new Date(o.created_at).toLocaleDateString('zh-CN')}</td></tr>`;
+  const p = orders.filter(o => o.picked_up);
+  document.getElementById('pickedupCount').textContent = `${p.length} 个已取货订单`;
+  const w = document.getElementById('pickedupTableWrap');
+  if (!p.length) { w.innerHTML = '<div class="empty-state">没有已取货订单</div>'; return; }
+  const pids = prodIdsIn(p);
+  let h = '<table class="data-table"><thead><tr><th>订单号</th><th>取货码</th>';
+  pids.forEach(id => { h += `<th class="qty-cell">${pn(id)}</th>`; });
+  h += '<th>日期</th></tr></thead><tbody>';
+  p.forEach(o => {
+    h += `<tr><td>${o.incoming.express_code}</td><td>${o.incoming.pickup_code}</td>`;
+    pids.forEach(id => { const x = o.incoming.products.find(z => z.product_id === id); h += `<td class="qty-cell">${x ? x.quantity : ''}</td>`; });
+    h += `<td style="font-size:0.78rem;color:var(--text-light)">${new Date(o.created_at).toLocaleDateString('zh-CN')}</td></tr>`;
   });
-  html += '</tbody></table>';
-  wrap.innerHTML = html;
+  h += '</tbody></table>'; w.innerHTML = h;
 }
 
-// ===== Shipped Table =====
 function renderShipped() {
-  const done = orders.filter(o => o.shipped);
-  document.getElementById('shippedCount').textContent = `${done.length} 个已寄出订单`;
-  const wrap = document.getElementById('shippedTableWrap');
-  if (done.length === 0) { wrap.innerHTML = '<div class="empty-state">没有已寄出订单</div>'; return; }
-
-  const prodIds = getAllProductIdsFromOutgoing(done);
-  let html = '<table class="data-table"><thead><tr><th>订单号</th><th>收件人</th><th>地址</th><th>电话</th>';
-  prodIds.forEach(id => { html += `<th class="qty-cell">${getProductName(id)}</th>`; });
-  html += '<th>备注</th></tr></thead><tbody>';
-
-  done.forEach(o => {
-    const rLen = o.outgoing.length;
+  const d = orders.filter(o => o.shipped);
+  document.getElementById('shippedCount').textContent = `${d.length} 个已寄出订单`;
+  const w = document.getElementById('shippedTableWrap');
+  if (!d.length) { w.innerHTML = '<div class="empty-state">没有已寄出订单</div>'; return; }
+  const pids = prodIdsOut(d);
+  let h = '<table class="data-table"><thead><tr><th>订单号</th><th>收件人</th><th>地址</th><th>电话</th>';
+  pids.forEach(id => { h += `<th class="qty-cell">${pn(id)}</th>`; });
+  h += '<th>备注</th></tr></thead><tbody>';
+  d.forEach(o => {
+    const rl = o.outgoing.length;
     o.outgoing.forEach((r, ri) => {
-      html += '<tr>';
-      if (ri === 0) html += `<td rowspan="${rLen}" style="vertical-align:middle">${o.incoming.express_code}</td>`;
-      html += `<td>${r.name}</td><td>${r.address}</td><td>${r.phone}</td>`;
-      prodIds.forEach(id => { const p = r.products.find(x => x.product_id === id); html += `<td class="qty-cell">${p ? p.quantity : ''}</td>`; });
-      html += `<td style="font-size:0.78rem">${r.notes || ''}</td></tr>`;
+      h += '<tr>';
+      if (ri === 0) h += `<td rowspan="${rl}" style="vertical-align:middle">${o.incoming.express_code}</td>`;
+      h += `<td>${r.name}</td><td>${r.address}</td><td>${r.phone}</td>`;
+      pids.forEach(id => { const x = r.products.find(z => z.product_id === id); h += `<td class="qty-cell">${x ? x.quantity : ''}</td>`; });
+      h += `<td style="font-size:0.78rem">${r.notes || ''}</td></tr>`;
     });
   });
-  html += '</tbody></table>';
-  wrap.innerHTML = html;
+  h += '</tbody></table>'; w.innerHTML = h;
 }
 
-// ===== Mark picked up =====
+// ===== Actions =====
 async function markPickedUp() {
-  const ids = getSelectedIds('incoming');
-  if (ids.length === 0) { showToast('请先勾选要取货的订单', 'error'); return; }
+  const ids = sel('incoming');
+  if (!ids.length) { showToast('请先勾选要取货的订单', 'error'); return; }
   if (!confirm(`确定将 ${ids.length} 个订单标记为已取货？`)) return;
   showLoading(true);
   try {
-    const result = await updateWithRetry(CONFIG.ordersPath, data => data.map(o => ids.includes(o.id) ? { ...o, picked_up: true } : o), `取货 ${ids.length} 个订单`);
-    orders = result.content; orders.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    const r = await updateWithRetry('orders.json', d => d.map(o => ids.includes(o.id) ? { ...o, picked_up: true } : o), `取货 ${ids.length} 个订单`);
+    orders = r.content; orders.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     renderIncoming(); renderPickedup();
     showToast(`${ids.length} 个订单已标记为已取货`, 'success');
   } catch (e) { showToast('操作失败: ' + e.message, 'error'); }
   showLoading(false);
 }
 
-// ===== Mark shipped =====
 async function markShipped() {
-  const ids = getSelectedIds('shipping');
-  if (ids.length === 0) { showToast('请先勾选要标记的订单', 'error'); return; }
+  const ids = sel('shipping');
+  if (!ids.length) { showToast('请先勾选要标记的订单', 'error'); return; }
   if (!confirm(`确定将 ${ids.length} 个订单标记为已寄出？`)) return;
   showLoading(true);
   try {
-    const result = await updateWithRetry(CONFIG.ordersPath, data => data.map(o => ids.includes(o.id) ? { ...o, shipped: true } : o), `寄出 ${ids.length} 个订单`);
-    orders = result.content; orders.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    const r = await updateWithRetry('orders.json', d => d.map(o => ids.includes(o.id) ? { ...o, shipped: true } : o), `寄出 ${ids.length} 个订单`);
+    orders = r.content; orders.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     renderShipping(); renderShipped();
     showToast(`${ids.length} 个订单已标记为已寄出`, 'success');
   } catch (e) { showToast('操作失败: ' + e.message, 'error'); }
@@ -455,8 +394,8 @@ async function markShipped() {
 
 // ===== Export Incoming PDF =====
 function exportIncomingPDF() {
-  const ids = getSelectedIds('incoming');
-  if (ids.length === 0) { showToast('请先勾选要导出的订单', 'error'); return; }
+  const ids = sel('incoming');
+  if (!ids.length) { showToast('请先勾选要导出的订单', 'error'); return; }
   pendingExportIds = ids;
   document.getElementById('exportDate').value = new Date().toISOString().split('T')[0];
   document.getElementById('exportPerson').value = '';
@@ -469,269 +408,154 @@ async function doExportIncomingPDF() {
   const pickupDate = document.getElementById('exportDate').value;
   const pickupPerson = document.getElementById('exportPerson').value.trim();
   if (!pickupDate || !pickupPerson) { showToast('请填写提货日期和提货人', 'error'); return; }
-
-  closeModal('exportModal');
-  showLoading(true);
-
+  closeModal('exportModal'); showLoading(true);
   try {
     const selected = orders.filter(o => pendingExportIds.includes(o.id));
-    const prodIds = getAllProductIdsFromIncoming(selected);
-    const totals = {}; prodIds.forEach(id => { totals[id] = 0; });
-
+    const pids = prodIdsIn(selected); const tot = {}; pids.forEach(id => { tot[id] = 0; });
     let rows = '';
     selected.forEach(o => {
       rows += `<tr><td>${o.incoming.express_code}</td><td>${o.incoming.pickup_code}</td>`;
-      prodIds.forEach(id => { const p = o.incoming.products.find(x => x.product_id === id); const qty = p ? p.quantity : 0; totals[id] += qty; rows += `<td style="text-align:center">${qty || ''}</td>`; });
+      pids.forEach(id => { const x = o.incoming.products.find(z => z.product_id === id); const q = x ? x.quantity : 0; tot[id] += q; rows += `<td style="text-align:center">${q || ''}</td>`; });
       rows += '</tr>';
     });
     rows += '<tr style="font-weight:bold;border-top:2px solid #333"><td colspan="2" style="text-align:right">合计</td>';
-    prodIds.forEach(id => { rows += `<td style="text-align:center">${totals[id]}</td>`; });
-    rows += '</tr>';
-
-    const prodHeaders = prodIds.map(id => `<th style="text-align:center;border:1px solid #555;padding:5px 8px;background:#eee;">${getProductName(id)}</th>`).join('');
-
-    const pdfHtml = `<div style="font-family:'Noto Sans SC','Microsoft YaHei',sans-serif;padding:30px;color:#222;">
+    pids.forEach(id => { rows += `<td style="text-align:center">${tot[id]}</td>`; }); rows += '</tr>';
+    const ph = pids.map(id => `<th style="text-align:center;border:1px solid #555;padding:5px 8px;background:#eee;">${pn(id)}</th>`).join('');
+    const html = `<div style="font-family:'Noto Sans SC','Microsoft YaHei',sans-serif;padding:30px;color:#222;">
       <h2 style="text-align:center;margin-bottom:8px;font-size:18px;">来件提货单</h2>
       <div style="margin-bottom:16px;font-size:13px;"><span style="margin-right:40px;">提货日期: ${pickupDate}</span><span>提货人: ${pickupPerson}</span></div>
-      <table style="width:100%;border-collapse:collapse;font-size:12px;">
-        <thead><tr><th style="border:1px solid #555;padding:5px 8px;background:#eee;">订单号</th><th style="border:1px solid #555;padding:5px 8px;background:#eee;">取货码</th>${prodHeaders}</tr></thead>
-        <tbody>${rows.replace(/<td/g, '<td style="border:1px solid #555;padding:5px 8px;"')}</tbody>
-      </table></div>`;
-
-    const blob = await generatePdfBlob(pdfHtml);
-    const filename = `pickup_${timestamp()}.pdf`;
-    await uploadPdf(CONFIG.historyPickup, filename, blob, `提货单 ${pickupDate} ${pickupPerson}`, { pickup_date: pickupDate, person: pickupPerson, order_count: selected.length });
-
-    showToast('提货单 PDF 已生成并保存', 'success');
-    await loadHistory();
+      <table style="width:100%;border-collapse:collapse;font-size:12px;"><thead><tr><th style="border:1px solid #555;padding:5px 8px;background:#eee;">订单号</th><th style="border:1px solid #555;padding:5px 8px;background:#eee;">取货码</th>${ph}</tr></thead>
+      <tbody>${rows.replace(/<td/g, '<td style="border:1px solid #555;padding:5px 8px;"')}</tbody></table></div>`;
+    const blob = await genPdf(html);
+    const fn = `pickup_${ts()}.pdf`;
+    await uploadPdf(HISTORY_PICKUP, fn, blob, `提货单 ${pickupDate} ${pickupPerson}`, { type:'pickup', pickup_date:pickupDate, person:pickupPerson, order_count:selected.length });
+    showToast('提货单 PDF 已生成并保存', 'success'); await loadHistory();
   } catch (e) { showToast('导出失败: ' + e.message, 'error'); console.error(e); }
   showLoading(false);
 }
 
-// ===== Export Shipping PDF =====
 async function exportShippingPDF() {
-  const ids = getSelectedIds('shipping');
-  if (ids.length === 0) { showToast('请先勾选要导出的订单', 'error'); return; }
-
+  const ids = sel('shipping');
+  if (!ids.length) { showToast('请先勾选要导出的订单', 'error'); return; }
   showLoading(true);
   try {
     const selected = orders.filter(o => ids.includes(o.id));
-    const prodIds = getAllProductIdsFromOutgoing(selected);
-    const totals = {}; prodIds.forEach(id => { totals[id] = 0; });
-
+    const pids = prodIdsOut(selected); const tot = {}; pids.forEach(id => { tot[id] = 0; });
     let rows = '';
     selected.forEach(o => {
-      const rLen = o.outgoing.length;
+      const rl = o.outgoing.length;
       o.outgoing.forEach((r, ri) => {
         rows += '<tr>';
-        if (ri === 0) rows += `<td rowspan="${rLen}" style="vertical-align:top">${o.incoming.express_code}</td>`;
+        if (ri === 0) rows += `<td rowspan="${rl}" style="vertical-align:top">${o.incoming.express_code}</td>`;
         rows += `<td>${r.name}</td><td>${r.address}</td><td>${r.phone}</td>`;
-        prodIds.forEach(id => { const p = r.products.find(x => x.product_id === id); const qty = p ? p.quantity : 0; totals[id] += qty; rows += `<td style="text-align:center">${qty || ''}</td>`; });
+        pids.forEach(id => { const x = r.products.find(z => z.product_id === id); const q = x ? x.quantity : 0; tot[id] += q; rows += `<td style="text-align:center">${q || ''}</td>`; });
         rows += `<td style="font-size:11px">${r.notes || ''}</td></tr>`;
       });
     });
     rows += '<tr style="font-weight:bold;border-top:2px solid #333"><td colspan="4" style="text-align:right">合计</td>';
-    prodIds.forEach(id => { rows += `<td style="text-align:center">${totals[id]}</td>`; });
-    rows += '<td></td></tr>';
-
-    const prodHeaders = prodIds.map(id => `<th style="text-align:center;border:1px solid #555;padding:5px 8px;background:#eee;">${getProductName(id)}</th>`).join('');
+    pids.forEach(id => { rows += `<td style="text-align:center">${tot[id]}</td>`; }); rows += '<td></td></tr>';
+    const ph = pids.map(id => `<th style="text-align:center;border:1px solid #555;padding:5px 8px;background:#eee;">${pn(id)}</th>`).join('');
     const today = new Date().toISOString().split('T')[0];
-
-    const pdfHtml = `<div style="font-family:'Noto Sans SC','Microsoft YaHei',sans-serif;padding:30px;color:#222;">
+    const html = `<div style="font-family:'Noto Sans SC','Microsoft YaHei',sans-serif;padding:30px;color:#222;">
       <h2 style="text-align:center;margin-bottom:8px;font-size:18px;">寄件单</h2>
       <div style="margin-bottom:16px;font-size:13px;">日期: ${today}</div>
-      <table style="width:100%;border-collapse:collapse;font-size:11px;">
-        <thead><tr>
-          <th style="border:1px solid #555;padding:5px 8px;background:#eee;">订单号</th>
-          <th style="border:1px solid #555;padding:5px 8px;background:#eee;">收件人</th>
-          <th style="border:1px solid #555;padding:5px 8px;background:#eee;">地址</th>
-          <th style="border:1px solid #555;padding:5px 8px;background:#eee;">电话</th>
-          ${prodHeaders}
-          <th style="border:1px solid #555;padding:5px 8px;background:#eee;">备注</th>
-        </tr></thead>
-        <tbody>${rows.replace(/<td/g, '<td style="border:1px solid #555;padding:5px 8px;"')}</tbody>
-      </table></div>`;
-
-    const blob = await generatePdfBlob(pdfHtml, 'landscape');
-    const filename = `shipping_${timestamp()}.pdf`;
-    await uploadPdf(CONFIG.historyShipping, filename, blob, `寄件单 ${today}`, { date: today, order_count: selected.length, recipient_count: selected.reduce((s, o) => s + o.outgoing.length, 0) });
-
-    showToast('寄件单 PDF 已生成并保存', 'success');
+      <table style="width:100%;border-collapse:collapse;font-size:11px;"><thead><tr><th style="border:1px solid #555;padding:5px 8px;background:#eee;">订单号</th><th style="border:1px solid #555;padding:5px 8px;background:#eee;">收件人</th><th style="border:1px solid #555;padding:5px 8px;background:#eee;">地址</th><th style="border:1px solid #555;padding:5px 8px;background:#eee;">电话</th>${ph}<th style="border:1px solid #555;padding:5px 8px;background:#eee;">备注</th></tr></thead>
+      <tbody>${rows.replace(/<td/g, '<td style="border:1px solid #555;padding:5px 8px;"')}</tbody></table></div>`;
+    const blob = await genPdf(html, 'landscape');
+    const fn = `shipping_${ts()}.pdf`;
+    const rc = selected.reduce((s, o) => s + o.outgoing.length, 0);
+    await uploadPdf(HISTORY_SHIPPING, fn, blob, `寄件单 ${today}`, { type:'shipping', date:today, order_count:selected.length, recipient_count:rc });
+    showToast('寄件单 PDF 已生成并保存', 'success'); await loadHistory();
   } catch (e) { showToast('导出失败: ' + e.message, 'error'); console.error(e); }
   showLoading(false);
 }
 
 // ===== PDF Helpers =====
-function timestamp() {
-  const n = new Date();
-  return n.getFullYear() + String(n.getMonth()+1).padStart(2,'0') + String(n.getDate()).padStart(2,'0')
-    + '_' + String(n.getHours()).padStart(2,'0') + String(n.getMinutes()).padStart(2,'0') + String(n.getSeconds()).padStart(2,'0');
+function ts() { const n=new Date(); return n.getFullYear()+String(n.getMonth()+1).padStart(2,'0')+String(n.getDate()).padStart(2,'0')+'_'+String(n.getHours()).padStart(2,'0')+String(n.getMinutes()).padStart(2,'0')+String(n.getSeconds()).padStart(2,'0'); }
+
+async function genPdf(html, orient='portrait') {
+  const rd=document.getElementById('pdfRender'); rd.innerHTML=html;
+  const blob=await html2pdf().set({ margin:10, image:{type:'jpeg',quality:0.95}, html2canvas:{scale:2,useCORS:true}, jsPDF:{unit:'mm',format:'a4',orientation:orient} }).from(rd.firstElementChild).outputPdf('blob');
+  rd.innerHTML=''; return blob;
 }
 
-async function generatePdfBlob(html, orientation = 'portrait') {
-  const renderDiv = document.getElementById('pdfRender');
-  renderDiv.innerHTML = html;
-  const el = renderDiv.firstElementChild;
-  const blob = await html2pdf().set({
-    margin: 10, image: { type: 'jpeg', quality: 0.95 },
-    html2canvas: { scale: 2, useCORS: true },
-    jsPDF: { unit: 'mm', format: 'a4', orientation },
-  }).from(el).outputPdf('blob');
-  renderDiv.innerHTML = '';
-  return blob;
-}
-
-function blobToBase64(blob) {
-  return new Promise((resolve, reject) => {
-    const r = new FileReader();
-    r.onloadend = () => resolve(r.result.split(',')[1]);
-    r.onerror = reject;
-    r.readAsDataURL(blob);
-  });
-}
+function b2b64(blob) { return new Promise((res,rej)=>{ const r=new FileReader(); r.onloadend=()=>res(r.result.split(',')[1]); r.onerror=rej; r.readAsDataURL(blob); }); }
 
 async function uploadPdf(folder, filename, blob, commitMsg, meta) {
-  const base64 = await blobToBase64(blob);
-  const filePath = `${folder}/${filename}`;
-  await createBinaryFile(filePath, base64, commitMsg);
-
-  // Update index
-  const indexPath = `${folder}/index.json`;
-  let indexData = [];
-  let sha = null;
-  try {
-    const res = await fetch(`${API}/${indexPath}?access_token=${CONFIG.token}`);
-    if (res.ok) { const d = await res.json(); indexData = JSON.parse(atob(d.content)); sha = d.sha; }
-  } catch (e) {}
-
-  const entry = { filename, ...meta, created_at: new Date().toISOString() };
-  indexData.push(entry);
-  const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(indexData, null, 2))));
-
-  if (sha) {
-    await fetch(`${API}/${indexPath}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ access_token: CONFIG.token, content: encoded, sha, message: '更新索引' }) });
-  } else {
-    await fetch(`${API}/${indexPath}`, { method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ access_token: CONFIG.token, content: encoded, message: '创建索引' }) });
-  }
+  const b64 = await b2b64(blob);
+  await createFile(`${folder}/${filename}`, b64, commitMsg);
+  const ip = `${folder}/index.json`;
+  let idx=[], sha=null;
+  try { const res=await fetch(`${API}/${ip}`,{headers:HEADERS}); if(res.ok){const d=await res.json(); idx=JSON.parse(atob(d.content)); sha=d.sha;} } catch(e){}
+  idx.push({ filename, ...meta, created_at:new Date().toISOString() });
+  const enc=btoa(unescape(encodeURIComponent(JSON.stringify(idx,null,2))));
+  const body = { content:enc, message:'更新索引' };
+  if (sha) body.sha = sha;
+  await fetch(`${API}/${ip}`, { method:'PUT', headers:HEADERS, body:JSON.stringify(body) });
 }
 
 // ===== History =====
 async function loadHistory() {
-  const container = document.getElementById('historyList');
-  let allEntries = [];
-
-  // Load pickup history
-  try {
-    const res = await fetch(`${API}/${CONFIG.historyPickup}/index.json?access_token=${CONFIG.token}`);
-    if (res.ok) {
-      const d = await res.json();
-      const data = JSON.parse(atob(d.content));
-      data.forEach(e => { e._type = 'pickup'; e._folder = CONFIG.historyPickup; });
-      allEntries = allEntries.concat(data);
-    }
-  } catch (e) {}
-
-  // Load shipping history
-  try {
-    const res = await fetch(`${API}/${CONFIG.historyShipping}/index.json?access_token=${CONFIG.token}`);
-    if (res.ok) {
-      const d = await res.json();
-      const data = JSON.parse(atob(d.content));
-      data.forEach(e => { e._type = 'shipping'; e._folder = CONFIG.historyShipping; });
-      allEntries = allEntries.concat(data);
-    }
-  } catch (e) {}
-
-  document.getElementById('historyCount').textContent = `${allEntries.length} 个历史档案`;
-
-  if (allEntries.length === 0) { container.innerHTML = '<div class="empty-state">没有历史档案</div>'; return; }
-
-  allEntries.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-
-  container.innerHTML = allEntries.map(entry => {
-    const timeStr = new Date(entry.created_at).toLocaleString('zh-CN');
-    const pdfUrl = `${RAW_BASE}/${entry._folder}/${entry.filename}`;
-    const typeLabel = entry._type === 'pickup' ? '提货单' : '寄件单';
-    let detail = '';
-    if (entry._type === 'pickup') {
-      detail = `${entry.pickup_date} | ${entry.person} | ${entry.order_count} 个订单`;
-    } else {
-      detail = `${entry.date} | ${entry.order_count} 个订单, ${entry.recipient_count} 个收件人`;
-    }
-    return `<div class="history-item">
-      <div class="history-info">
-        <span class="history-date">${typeLabel} - ${detail}</span>
-        <span class="history-meta">生成时间: ${timeStr}</span>
-      </div>
-      <button class="btn btn-outline" onclick="window.open('${pdfUrl}','_blank')">检视</button>
-    </div>`;
+  const c=document.getElementById('historyList'); let all=[];
+  for (const f of [HISTORY_PICKUP, HISTORY_SHIPPING]) {
+    try { const res=await fetch(`${API}/${f}/index.json`,{headers:HEADERS}); if(res.ok){const d=await res.json(); const data=JSON.parse(atob(d.content)); data.forEach(e=>{e._folder=f;}); all=all.concat(data);} } catch(e){}
+  }
+  document.getElementById('historyCount').textContent=`${all.length} 个历史档案`;
+  if(!all.length){c.innerHTML='<div class="empty-state">没有历史档案</div>';return;}
+  all.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+  c.innerHTML=all.map(e=>{
+    const t=new Date(e.created_at).toLocaleString('zh-CN');
+    const isP=e.type==='pickup';
+    const lbl=isP?'提货单':'寄件单';
+    const det=isP?`${e.pickup_date} | ${e.person} | ${e.order_count} 个订单`:`${e.date} | ${e.order_count} 个订单, ${e.recipient_count} 个收件人`;
+    return `<div class="history-item"><div class="history-info"><span class="history-date">${lbl} - ${det}</span><span class="history-meta">生成时间: ${t}</span></div><button class="btn btn-outline" onclick="viewPdf('${e._folder}','${e.filename}')">检视</button></div>`;
   }).join('');
 }
 
-// ===== Products =====
-async function loadProducts() {
-  const data = await fetchFileWithSha(CONFIG.productsPath);
-  products = data.content;
-  renderProducts();
-}
-
-function renderProducts() {
-  document.getElementById('productList').innerHTML = products.map((p, i) => `
-    <div class="product-row">
-      <input type="text" value="${p.id}" data-idx="${i}" data-field="id" placeholder="产品ID">
-      <input type="text" value="${p.name}" data-idx="${i}" data-field="name" placeholder="产品名称">
-      <button class="btn btn-danger" onclick="removeProduct(${i})">删除</button>
-    </div>
-  `).join('');
-}
-
-function addProductRow() {
-  const newId = 'p' + String(products.length + 1).padStart(3, '0');
-  products.push({ id: newId, name: '' });
-  renderProducts();
-  const inputs = document.querySelectorAll('#productList input[data-field="name"]');
-  if (inputs.length) inputs[inputs.length - 1].focus();
-}
-
-function removeProduct(idx) { products.splice(idx, 1); renderProducts(); }
-
-async function saveProducts() {
-  const rows = document.querySelectorAll('#productList .product-row');
-  const updated = [];
-  for (const row of rows) {
-    const id = row.querySelector('[data-field="id"]').value.trim();
-    const name = row.querySelector('[data-field="name"]').value.trim();
-    if (id && name) updated.push({ id, name });
-  }
-  if (updated.length === 0) { showToast('至少保留一个产品', 'error'); return; }
+async function viewPdf(folder, filename) {
   showLoading(true);
   try {
-    const result = await updateWithRetry(CONFIG.productsPath, () => updated, '更新产品列表');
-    products = result.content; renderProducts();
-    showToast('产品列表已保存', 'success');
-  } catch (e) { showToast('保存失败: ' + e.message, 'error'); }
+    const res=await fetch(`${API}/${folder}/${filename}`,{headers:HEADERS});
+    if(!res.ok) throw new Error('文件读取失败');
+    const data=await res.json();
+    const bin=atob(data.content); const bytes=new Uint8Array(bin.length);
+    for(let i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i);
+    const blob=new Blob([bytes],{type:'application/pdf'});
+    window.open(URL.createObjectURL(blob),'_blank');
+  } catch(e){showToast('无法打开: '+e.message,'error');}
+  showLoading(false);
+}
+
+// ===== Products =====
+async function loadProducts() { const d=await fetchFileWithSha('products.json'); products=d.content; renderProducts(); }
+
+function renderProducts() {
+  document.getElementById('productList').innerHTML=products.map((p,i)=>`<div class="product-row"><input type="text" value="${p.id}" data-idx="${i}" data-field="id" placeholder="产品ID"><input type="text" value="${p.name}" data-idx="${i}" data-field="name" placeholder="产品名称"><button class="btn btn-danger" onclick="removeProduct(${i})">删除</button></div>`).join('');
+}
+function addProductRow() { products.push({id:'p'+String(products.length+1).padStart(3,'0'),name:''}); renderProducts(); const inp=document.querySelectorAll('#productList input[data-field="name"]'); if(inp.length) inp[inp.length-1].focus(); }
+function removeProduct(i) { products.splice(i,1); renderProducts(); }
+async function saveProducts() {
+  const rows=document.querySelectorAll('#productList .product-row'); const upd=[];
+  for(const row of rows){ const id=row.querySelector('[data-field="id"]').value.trim(); const nm=row.querySelector('[data-field="name"]').value.trim(); if(id&&nm) upd.push({id,name:nm}); }
+  if(!upd.length){showToast('至少保留一个产品','error');return;}
+  showLoading(true);
+  try{ const r=await updateWithRetry('products.json',()=>upd,'更新产品列表'); products=r.content; renderProducts(); showToast('产品列表已保存','success'); }
+  catch(e){showToast('保存失败: '+e.message,'error');}
   showLoading(false);
 }
 
 // ===== Tabs =====
 function switchTab(name) {
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
   document.getElementById(`tab-${name}`).classList.add('active');
-  const idx = TAB_NAMES.indexOf(name);
-  if (idx >= 0) document.querySelectorAll('.tab')[idx].classList.add('active');
-  if (name === 'history') loadHistory();
+  const i=TAB_NAMES.indexOf(name); if(i>=0) document.querySelectorAll('.tab')[i].classList.add('active');
+  if(name==='history') loadHistory();
 }
 
 // ===== UI =====
-function showToast(msg, type) {
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.className = 'toast ' + type; t.style.display = 'block';
-  setTimeout(() => { t.style.display = 'none'; }, 3500);
-}
-function showLoading(on) { document.getElementById('loading').classList.toggle('active', on); }
+function showToast(msg,type){ const t=document.getElementById('toast'); t.textContent=msg; t.className='toast '+type; t.style.display='block'; setTimeout(()=>{t.style.display='none';},3500); }
+function showLoading(on){ document.getElementById('loading').classList.toggle('active',on); }
 </script>
 </body>
 </html>
