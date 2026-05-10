@@ -1,15 +1,15 @@
 [
   {
-    "id": "Reserve",
+    "id": "沛泉Reserve",
     "name": "沛泉Reserve"
   },
   {
-    "id": "Mind",
+    "id": "敏动力Mind",
     "name": "敏动力Mind"
   },
   {
-    "id": "Finiti",
-    "name": "飞乐Cap"
+    "id": "Finiti飞乐",
+    "name": "Finiti飞乐"
   },
   {
     "id": "AM丸Cap",
@@ -22,5 +22,53 @@
   {
     "id": "AM粉",
     "name": "AM粉"
+  },
+  {
+    "id": "PM粉",
+    "name": "PM粉"
+  },
+  {
+    "id": "心脏宝CirQul8",
+    "name": "心脏宝CirQul8"
+  },
+  {
+    "id": "LIFE NMN",
+    "name": "LIFE NMN"
+  },
+  {
+    "id": "婕益菌",
+    "name": "婕益菌"
+  },
+  {
+    "id": "干细胞BLU",
+    "name": "RevitaBLŪ 干细胞"
+  },
+  {
+    "id": "修复霜Night Repair",
+    "name": "修复霜Night Repair"
+  },
+  {
+    "id": "美体霜",
+    "name": "美体霜"
+  },
+  {
+    "id": "精华serum",
+    "name": "精华serum"
+  },
+  {
+    "id": "洁颜露CLEAN",
+    "name": "洁颜露CLEAN"
+   },
+  {
+    "id": "日霜daily",
+    "name": "日霜daily"
+  },
+  {
+    "id": "维C 365",
+    "name": "m.mūn 365 (维C)"
+  },
+  {
+    "id": "吊咀",
+    "name": "tuün 吊咀"
   }
 ]

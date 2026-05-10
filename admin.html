@@ -212,6 +212,13 @@ let orders = [];
 let products = [];
 let pendingExportIds = [];
 
+// ===== XSS 防护 =====
+function esc(v = '') {
+  return String(v).replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+}
+
 // ===== Auth =====
 function checkPwd() {
   if (document.getElementById('pwdInput').value === CONFIG.password) {
@@ -230,6 +237,7 @@ async function initAdmin() {
 
 // ===== GitHub API =====
 function decodeB64(str) { const bytes = Uint8Array.from(atob(str), c => c.charCodeAt(0)); return new TextDecoder().decode(bytes); }
+function encodeB64(str) { return btoa(unescape(encodeURIComponent(str))); }
 
 async function fetchFileWithSha(path) {
   const res = await fetch(`${API}/${path}`, { headers: HEADERS });
@@ -241,7 +249,7 @@ async function fetchFileWithSha(path) {
 async function updateFile(path, content, sha, message) {
   const res = await fetch(`${API}/${path}`, {
     method: 'PUT', headers: HEADERS,
-    body: JSON.stringify({ content: btoa(unescape(encodeURIComponent(JSON.stringify(content, null, 2)))), sha, message }),
+    body: JSON.stringify({ content: encodeB64(JSON.stringify(content, null, 2)), sha, message }),
   });
   if (!res.ok) { const err = await res.json(); throw new Error(err.message || '写入失败'); }
   return res.json();
@@ -281,26 +289,28 @@ function pn(id) { const p = products.find(x => x.id === id); return p ? p.name :
 function sel(g) { return [...document.querySelectorAll(`input[data-group="${g}"]:checked`)].map(c => c.value); }
 function togAll(g, v) { document.querySelectorAll(`input[data-group="${g}"]`).forEach(c => { c.checked = v; }); }
 
+// ----- 来件管理 -----
 function renderIncoming() {
   const p = orders.filter(o => !o.picked_up);
   document.getElementById('incomingCount').textContent = `${p.length} 个未取货订单`;
   const w = document.getElementById('incomingTableWrap');
   if (!p.length) { w.innerHTML = '<div class="empty-state">没有未取货订单</div>'; return; }
   const pids = prodIdsIn(p); const tot = {}; pids.forEach(id => { tot[id] = 0; });
-  let h = '<table class="data-table"><thead><tr><th><input type="checkbox" onchange="togAll(\'incoming\',this.checked)"></th><th>订单号</th><th>取货码</th>';
-  pids.forEach(id => { h += `<th class="qty-cell">${pn(id)}</th>`; });
+  let h = '<table class="data-table"><thead><tr><th><input type="checkbox" onchange="togAll(\'incoming\',this.checked)"></th><th>填表人</th><th>订单号</th><th>取货码</th>';
+  pids.forEach(id => { h += `<th class="qty-cell">${esc(pn(id))}</th>`; });
   h += '<th>日期</th></tr></thead><tbody>';
   p.forEach(o => {
-    h += `<tr><td><input type="checkbox" data-group="incoming" value="${o.id}"></td><td>${o.incoming.express_code}</td><td>${o.incoming.pickup_code}</td>`;
+    h += `<tr><td><input type="checkbox" data-group="incoming" value="${o.id}"></td><td>${esc(o.created_by || '')}</td><td>${esc(o.incoming.express_code)}</td><td>${esc(o.incoming.pickup_code)}</td>`;
     pids.forEach(id => { const x = o.incoming.products.find(z => z.product_id === id); const q = x ? x.quantity : 0; tot[id] += q; h += `<td class="qty-cell">${q || ''}</td>`; });
     h += `<td style="font-size:0.78rem;color:var(--text-light)">${new Date(o.created_at).toLocaleDateString('zh-CN')}</td></tr>`;
   });
-  h += '<tr class="total-row"><td></td><td colspan="2">合计</td>';
+  h += '<tr class="total-row"><td></td><td colspan="3">合计</td>';
   pids.forEach(id => { h += `<td class="qty-cell">${tot[id]}</td>`; });
   h += '<td></td></tr></tbody></table>';
   w.innerHTML = h;
 }
 
+// ----- 寄件管理 -----
 function renderShipping() {
   const p = orders.filter(o => !o.shipped);
   const tr = p.reduce((s, o) => s + o.outgoing.length, 0);
@@ -308,59 +318,61 @@ function renderShipping() {
   const w = document.getElementById('shippingTableWrap');
   if (!p.length) { w.innerHTML = '<div class="empty-state">没有未寄出订单</div>'; return; }
   const pids = prodIdsOut(p); const tot = {}; pids.forEach(id => { tot[id] = 0; });
-  let h = '<table class="data-table"><thead><tr><th><input type="checkbox" onchange="togAll(\'shipping\',this.checked)"></th><th>订单号</th><th>收件人</th><th>地址</th><th>电话</th>';
-  pids.forEach(id => { h += `<th class="qty-cell">${pn(id)}</th>`; });
+  let h = '<table class="data-table"><thead><tr><th><input type="checkbox" onchange="togAll(\'shipping\',this.checked)"></th><th>填表人</th><th>订单号</th><th>收件人</th><th>地址</th><th>电话</th>';
+  pids.forEach(id => { h += `<th class="qty-cell">${esc(pn(id))}</th>`; });
   h += '<th>备注</th></tr></thead><tbody>';
   p.forEach(o => {
     const rl = o.outgoing.length;
     o.outgoing.forEach((r, ri) => {
       h += '<tr>';
-      if (ri === 0) h += `<td rowspan="${rl}" style="vertical-align:middle"><input type="checkbox" data-group="shipping" value="${o.id}"></td><td rowspan="${rl}" style="vertical-align:middle">${o.incoming.express_code}</td>`;
-      h += `<td>${r.name}</td><td>${r.address}</td><td>${r.phone}</td>`;
+      if (ri === 0) h += `<td rowspan="${rl}" style="vertical-align:middle"><input type="checkbox" data-group="shipping" value="${o.id}"></td><td rowspan="${rl}" style="vertical-align:middle">${esc(o.created_by || '')}</td><td rowspan="${rl}" style="vertical-align:middle">${esc(o.incoming.express_code)}</td>`;
+      h += `<td>${esc(r.name)}</td><td>${esc(r.address)}</td><td>${esc(r.phone)}</td>`;
       pids.forEach(id => { const x = r.products.find(z => z.product_id === id); const q = x ? x.quantity : 0; tot[id] += q; h += `<td class="qty-cell">${q || ''}</td>`; });
-      h += `<td style="font-size:0.78rem">${r.notes || ''}</td></tr>`;
+      h += `<td style="font-size:0.78rem">${esc(r.notes || '')}</td></tr>`;
     });
   });
-  h += '<tr class="total-row"><td></td><td colspan="4">合计</td>';
+  h += '<tr class="total-row"><td></td><td colspan="5">合计</td>';
   pids.forEach(id => { h += `<td class="qty-cell">${tot[id]}</td>`; });
   h += '<td></td></tr></tbody></table>';
   w.innerHTML = h;
 }
 
+// ----- 已取货 -----
 function renderPickedup() {
   const p = orders.filter(o => o.picked_up);
   document.getElementById('pickedupCount').textContent = `${p.length} 个已取货订单`;
   const w = document.getElementById('pickedupTableWrap');
   if (!p.length) { w.innerHTML = '<div class="empty-state">没有已取货订单</div>'; return; }
   const pids = prodIdsIn(p);
-  let h = '<table class="data-table"><thead><tr><th>订单号</th><th>取货码</th>';
-  pids.forEach(id => { h += `<th class="qty-cell">${pn(id)}</th>`; });
+  let h = '<table class="data-table"><thead><tr><th>填表人</th><th>订单号</th><th>取货码</th>';
+  pids.forEach(id => { h += `<th class="qty-cell">${esc(pn(id))}</th>`; });
   h += '<th>日期</th></tr></thead><tbody>';
   p.forEach(o => {
-    h += `<tr><td>${o.incoming.express_code}</td><td>${o.incoming.pickup_code}</td>`;
+    h += `<tr><td>${esc(o.created_by || '')}</td><td>${esc(o.incoming.express_code)}</td><td>${esc(o.incoming.pickup_code)}</td>`;
     pids.forEach(id => { const x = o.incoming.products.find(z => z.product_id === id); h += `<td class="qty-cell">${x ? x.quantity : ''}</td>`; });
     h += `<td style="font-size:0.78rem;color:var(--text-light)">${new Date(o.created_at).toLocaleDateString('zh-CN')}</td></tr>`;
   });
   h += '</tbody></table>'; w.innerHTML = h;
 }
 
+// ----- 已寄出 -----
 function renderShipped() {
   const d = orders.filter(o => o.shipped);
   document.getElementById('shippedCount').textContent = `${d.length} 个已寄出订单`;
   const w = document.getElementById('shippedTableWrap');
   if (!d.length) { w.innerHTML = '<div class="empty-state">没有已寄出订单</div>'; return; }
   const pids = prodIdsOut(d);
-  let h = '<table class="data-table"><thead><tr><th>订单号</th><th>收件人</th><th>地址</th><th>电话</th>';
-  pids.forEach(id => { h += `<th class="qty-cell">${pn(id)}</th>`; });
+  let h = '<table class="data-table"><thead><tr><th>填表人</th><th>订单号</th><th>收件人</th><th>地址</th><th>电话</th>';
+  pids.forEach(id => { h += `<th class="qty-cell">${esc(pn(id))}</th>`; });
   h += '<th>备注</th></tr></thead><tbody>';
   d.forEach(o => {
     const rl = o.outgoing.length;
     o.outgoing.forEach((r, ri) => {
       h += '<tr>';
-      if (ri === 0) h += `<td rowspan="${rl}" style="vertical-align:middle">${o.incoming.express_code}</td>`;
-      h += `<td>${r.name}</td><td>${r.address}</td><td>${r.phone}</td>`;
+      if (ri === 0) h += `<td rowspan="${rl}" style="vertical-align:middle">${esc(o.created_by || '')}</td><td rowspan="${rl}" style="vertical-align:middle">${esc(o.incoming.express_code)}</td>`;
+      h += `<td>${esc(r.name)}</td><td>${esc(r.address)}</td><td>${esc(r.phone)}</td>`;
       pids.forEach(id => { const x = r.products.find(z => z.product_id === id); h += `<td class="qty-cell">${x ? x.quantity : ''}</td>`; });
-      h += `<td style="font-size:0.78rem">${r.notes || ''}</td></tr>`;
+      h += `<td style="font-size:0.78rem">${esc(r.notes || '')}</td></tr>`;
     });
   });
   h += '</tbody></table>'; w.innerHTML = h;
@@ -415,19 +427,20 @@ async function doExportIncomingPDF() {
   try {
     const selected = orders.filter(o => pendingExportIds.includes(o.id));
     const pids = prodIdsIn(selected); const tot = {}; pids.forEach(id => { tot[id] = 0; });
+    const S = 'border:1px solid #555;padding:5px 8px;background:#eee;';
     let rows = '';
     selected.forEach(o => {
-      rows += `<tr><td>${o.incoming.express_code}</td><td>${o.incoming.pickup_code}</td>`;
+      rows += `<tr><td>${esc(o.created_by || '')}</td><td>${esc(o.incoming.express_code)}</td><td>${esc(o.incoming.pickup_code)}</td>`;
       pids.forEach(id => { const x = o.incoming.products.find(z => z.product_id === id); const q = x ? x.quantity : 0; tot[id] += q; rows += `<td style="text-align:center">${q || ''}</td>`; });
       rows += '</tr>';
     });
-    rows += '<tr style="font-weight:bold;border-top:2px solid #333"><td colspan="2" style="text-align:right">合计</td>';
+    rows += '<tr style="font-weight:bold;border-top:2px solid #333"><td colspan="3" style="text-align:right">合计</td>';
     pids.forEach(id => { rows += `<td style="text-align:center">${tot[id]}</td>`; }); rows += '</tr>';
-    const ph = pids.map(id => `<th style="text-align:center;border:1px solid #555;padding:5px 8px;background:#eee;">${pn(id)}</th>`).join('');
+    const ph = pids.map(id => `<th style="text-align:center;${S}">${esc(pn(id))}</th>`).join('');
     const html = `<div style="font-family:'Noto Sans SC','Microsoft YaHei',sans-serif;padding:30px;color:#222;">
       <h2 style="text-align:center;margin-bottom:8px;font-size:18px;">来件提货单</h2>
-      <div style="margin-bottom:16px;font-size:13px;"><span style="margin-right:40px;">提货日期: ${pickupDate}</span><span>提货人: ${pickupPerson}</span></div>
-      <table style="width:100%;border-collapse:collapse;font-size:12px;"><thead><tr><th style="border:1px solid #555;padding:5px 8px;background:#eee;">订单号</th><th style="border:1px solid #555;padding:5px 8px;background:#eee;">取货码</th>${ph}</tr></thead>
+      <div style="margin-bottom:16px;font-size:13px;"><span style="margin-right:40px;">提货日期: ${esc(pickupDate)}</span><span>提货人: ${esc(pickupPerson)}</span></div>
+      <table style="width:100%;border-collapse:collapse;font-size:12px;"><thead><tr><th style="${S}">填表人</th><th style="${S}">订单号</th><th style="${S}">取货码</th>${ph}</tr></thead>
       <tbody>${rows.replace(/<td/g, '<td style="border:1px solid #555;padding:5px 8px;"')}</tbody></table></div>`;
     const blob = await genPdf(html);
     const fn = `pickup_${ts()}.pdf`;
@@ -437,6 +450,7 @@ async function doExportIncomingPDF() {
   showLoading(false);
 }
 
+// ===== Export Shipping PDF =====
 async function exportShippingPDF() {
   const ids = sel('shipping');
   if (!ids.length) { showToast('请先勾选要导出的订单', 'error'); return; }
@@ -444,25 +458,26 @@ async function exportShippingPDF() {
   try {
     const selected = orders.filter(o => ids.includes(o.id));
     const pids = prodIdsOut(selected); const tot = {}; pids.forEach(id => { tot[id] = 0; });
+    const S = 'border:1px solid #555;padding:5px 8px;background:#eee;';
     let rows = '';
     selected.forEach(o => {
       const rl = o.outgoing.length;
       o.outgoing.forEach((r, ri) => {
         rows += '<tr>';
-        if (ri === 0) rows += `<td rowspan="${rl}" style="vertical-align:top">${o.incoming.express_code}</td>`;
-        rows += `<td>${r.name}</td><td>${r.address}</td><td>${r.phone}</td>`;
+        if (ri === 0) rows += `<td rowspan="${rl}" style="vertical-align:top">${esc(o.created_by || '')}</td><td rowspan="${rl}" style="vertical-align:top">${esc(o.incoming.express_code)}</td>`;
+        rows += `<td>${esc(r.name)}</td><td>${esc(r.address)}</td><td>${esc(r.phone)}</td>`;
         pids.forEach(id => { const x = r.products.find(z => z.product_id === id); const q = x ? x.quantity : 0; tot[id] += q; rows += `<td style="text-align:center">${q || ''}</td>`; });
-        rows += `<td style="font-size:11px">${r.notes || ''}</td></tr>`;
+        rows += `<td style="font-size:11px">${esc(r.notes || '')}</td></tr>`;
       });
     });
-    rows += '<tr style="font-weight:bold;border-top:2px solid #333"><td colspan="4" style="text-align:right">合计</td>';
+    rows += '<tr style="font-weight:bold;border-top:2px solid #333"><td colspan="5" style="text-align:right">合计</td>';
     pids.forEach(id => { rows += `<td style="text-align:center">${tot[id]}</td>`; }); rows += '<td></td></tr>';
-    const ph = pids.map(id => `<th style="text-align:center;border:1px solid #555;padding:5px 8px;background:#eee;">${pn(id)}</th>`).join('');
+    const ph = pids.map(id => `<th style="text-align:center;${S}">${esc(pn(id))}</th>`).join('');
     const today = new Date().toISOString().split('T')[0];
     const html = `<div style="font-family:'Noto Sans SC','Microsoft YaHei',sans-serif;padding:30px;color:#222;">
       <h2 style="text-align:center;margin-bottom:8px;font-size:18px;">寄件单</h2>
       <div style="margin-bottom:16px;font-size:13px;">日期: ${today}</div>
-      <table style="width:100%;border-collapse:collapse;font-size:11px;"><thead><tr><th style="border:1px solid #555;padding:5px 8px;background:#eee;">订单号</th><th style="border:1px solid #555;padding:5px 8px;background:#eee;">收件人</th><th style="border:1px solid #555;padding:5px 8px;background:#eee;">地址</th><th style="border:1px solid #555;padding:5px 8px;background:#eee;">电话</th>${ph}<th style="border:1px solid #555;padding:5px 8px;background:#eee;">备注</th></tr></thead>
+      <table style="width:100%;border-collapse:collapse;font-size:11px;"><thead><tr><th style="${S}">填表人</th><th style="${S}">订单号</th><th style="${S}">收件人</th><th style="${S}">地址</th><th style="${S}">电话</th>${ph}<th style="${S}">备注</th></tr></thead>
       <tbody>${rows.replace(/<td/g, '<td style="border:1px solid #555;padding:5px 8px;"')}</tbody></table></div>`;
     const blob = await genPdf(html, 'landscape');
     const fn = `shipping_${ts()}.pdf`;
@@ -491,7 +506,7 @@ async function uploadPdf(folder, filename, blob, commitMsg, meta) {
   let idx=[], sha=null;
   try { const res=await fetch(`${API}/${ip}`,{headers:HEADERS}); if(res.ok){const d=await res.json(); idx=JSON.parse(decodeB64(d.content)); sha=d.sha;} } catch(e){}
   idx.push({ filename, ...meta, created_at:new Date().toISOString() });
-  const enc=btoa(unescape(encodeURIComponent(JSON.stringify(idx,null,2))));
+  const enc = encodeB64(JSON.stringify(idx, null, 2));
   const body = { content:enc, message:'更新索引' };
   if (sha) body.sha = sha;
   await fetch(`${API}/${ip}`, { method:'PUT', headers:HEADERS, body:JSON.stringify(body) });
@@ -510,8 +525,8 @@ async function loadHistory() {
     const t=new Date(e.created_at).toLocaleString('zh-CN');
     const isP=e.type==='pickup';
     const lbl=isP?'提货单':'寄件单';
-    const det=isP?`${e.pickup_date} | ${e.person} | ${e.order_count} 个订单`:`${e.date} | ${e.order_count} 个订单, ${e.recipient_count} 个收件人`;
-    return `<div class="history-item"><div class="history-info"><span class="history-date">${lbl} - ${det}</span><span class="history-meta">生成时间: ${t}</span></div><button class="btn btn-outline" onclick="viewPdf('${e._folder}','${e.filename}')">检视</button></div>`;
+    const det=isP?`${esc(e.pickup_date)} | ${esc(e.person)} | ${e.order_count} 个订单`:`${esc(e.date)} | ${e.order_count} 个订单, ${e.recipient_count} 个收件人`;
+    return `<div class="history-item"><div class="history-info"><span class="history-date">${esc(lbl)} - ${det}</span><span class="history-meta">生成时间: ${esc(t)}</span></div><button class="btn btn-outline" onclick="viewPdf('${e._folder}','${e.filename}')">检视</button></div>`;
   }).join('');
 }
 
@@ -532,14 +547,29 @@ async function viewPdf(folder, filename) {
 // ===== Products =====
 async function loadProducts() { const d=await fetchFileWithSha('products.json'); products=d.content; renderProducts(); }
 
-function renderProducts() {
-  document.getElementById('productList').innerHTML=products.map((p,i)=>`<div class="product-row"><input type="text" value="${p.id}" data-idx="${i}" data-field="id" placeholder="产品ID"><input type="text" value="${p.name}" data-idx="${i}" data-field="name" placeholder="产品名称"><button class="btn btn-danger" onclick="removeProduct(${i})">删除</button></div>`).join('');
+function syncProductsFromDOM() {
+  const rows = document.querySelectorAll('#productList .product-row');
+  if (!rows.length) return;
+  const synced = [];
+  for (const row of rows) {
+    const idEl = row.querySelector('[data-field="id"]');
+    if (!idEl) continue;
+    const id = idEl.value;
+    const name = row.querySelector('[data-field="name"]').value;
+    synced.push({ id, name });
+  }
+  products = synced;
 }
-function addProductRow() { products.push({id:'p'+String(products.length+1).padStart(3,'0'),name:''}); renderProducts(); const inp=document.querySelectorAll('#productList input[data-field="name"]'); if(inp.length) inp[inp.length-1].focus(); }
-function removeProduct(i) { products.splice(i,1); renderProducts(); }
+
+function renderProducts() {
+  const header = '<div class="product-row" style="margin-bottom:4px;"><span style="flex:1;font-size:0.78rem;color:var(--text-light);padding-left:2px;">简称 (ID)</span><span style="flex:1;font-size:0.78rem;color:var(--text-light);padding-left:2px;">全称</span><span style="width:52px;"></span></div>';
+  document.getElementById('productList').innerHTML = header + products.map((p,i)=>`<div class="product-row"><input type="text" value="${esc(p.id)}" data-idx="${i}" data-field="id" placeholder="产品ID"><input type="text" value="${esc(p.name)}" data-idx="${i}" data-field="name" placeholder="产品名称"><button class="btn btn-danger" onclick="removeProduct(${i})">删除</button></div>`).join('');
+}
+function addProductRow() { syncProductsFromDOM(); products.push({id:'p'+String(products.length+1).padStart(3,'0'),name:''}); renderProducts(); const inp=document.querySelectorAll('#productList input[data-field="name"]'); if(inp.length) inp[inp.length-1].focus(); }
+function removeProduct(i) { syncProductsFromDOM(); products.splice(i,1); renderProducts(); }
 async function saveProducts() {
   const rows=document.querySelectorAll('#productList .product-row'); const upd=[];
-  for(const row of rows){ const id=row.querySelector('[data-field="id"]').value.trim(); const nm=row.querySelector('[data-field="name"]').value.trim(); if(id&&nm) upd.push({id,name:nm}); }
+  for(const row of rows){ const idEl=row.querySelector('[data-field="id"]'); if(!idEl) continue; const id=idEl.value.trim(); const nm=row.querySelector('[data-field="name"]').value.trim(); if(id&&nm) upd.push({id,name:nm}); }
   if(!upd.length){showToast('至少保留一个产品','error');return;}
   showLoading(true);
   try{ const r=await updateWithRetry('products.json',()=>upd,'更新产品列表'); products=r.content; renderProducts(); showToast('产品列表已保存','success'); }
