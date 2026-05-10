@@ -195,6 +195,11 @@
             "product_id": "Reserve",
             "name": "沛泉Reserve",
             "quantity": 5
+          },
+          {
+            "product_id": "Mind",
+            "name": "敏动力Mind",
+            "quantity": 2
           }
         ],
         "notes": ""
@@ -207,7 +212,7 @@
           {
             "product_id": "Mind",
             "name": "敏动力Mind",
-            "quantity": 5
+            "quantity": 3
           }
         ],
         "notes": ""
