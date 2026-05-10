@@ -36,7 +36,6 @@
   .btn-small { padding: 4px 10px; font-size: 0.8rem; }
   .btn-accent { background: var(--accent); color: #fff; }
   .btn-accent:hover { background: var(--accent-hover); }
-  .btn-accent:disabled { background: #ccc; cursor: not-allowed; }
   .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-light); }
   .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
   .btn-danger { background: transparent; border: 1px solid var(--danger); color: var(--danger); }
@@ -66,7 +65,6 @@
 <div class="container">
   <h1>提交订单</h1>
   <p class="subtitle">填写来件信息，并添加收件人</p>
-
   <div class="section">
     <div class="section-title">来件信息</div>
     <div class="form-row">
@@ -77,17 +75,14 @@
     <div id="incomingProducts"></div>
     <button class="btn btn-outline btn-small" onclick="addIncomingProduct()" style="margin-top:4px;">+ 添加产品</button>
   </div>
-
   <div class="section">
     <div class="section-title">收件人信息</div>
     <div id="validationBox" class="validation-box"></div>
     <div id="recipientList"></div>
     <button class="add-recipient-btn" onclick="addRecipient()">+ 添加收件人</button>
   </div>
-
   <button class="btn btn-accent btn-submit" onclick="submitOrder()">提交订单</button>
 </div>
-
 <div class="toast" id="toast"></div>
 <div class="loading-overlay" id="loading"><div class="spinner"></div></div>
 
@@ -96,17 +91,23 @@
 // 配置区域
 // owner: GitHub 用户名
 // repo:  仓库名
-// _k:    Token 的 base64 编码
-//        获取方法: 浏览器控制台输入 btoa('ghp_你的token') 回车
-//        把输出的字符串粘贴到下面
+// _k:    加密后的 token
+//
+// 获取方法: 浏览器控制台运行以下代码（把 YOUR_TOKEN 换成你的 token）:
+//
+//   function enc(t){var k='orderSysKey2025';var r=[];for(var i=0;i<t.length;i++){r.push(t.charCodeAt(i)^k.charCodeAt(i%k.length));}return r.join('.');}
+//   enc('YOUR_TOKEN')
+//
+// 把输出的数字串粘贴到 _k 里
 // ============================================================
 const CONFIG = {
   owner: 'Marcel-Iam',
   repo: 'chancf111',
-  _k:    'Z2hwX0ZKYWZUajNyTldQWExRYllYb2hMM2VPQVh2c0ZhOTE4eG9UcQ==',
+  _k: '8.26.20.58.38.53.15.37.120.35.73.107.98.0.13.56.74.6.22.59.10.64.71.45.16.55.89.118.98.126.40.74.9.12.70.99.52.36.47.84',
 };
 
-const TOKEN = atob(CONFIG._k);
+function _d(s){var k='orderSysKey2025';return s.split('.').map(function(n,i){return String.fromCharCode(parseInt(n)^k.charCodeAt(i%k.length));}).join('');}
+const TOKEN = _d(CONFIG._k);
 const API = `https://api.github.com/repos/${CONFIG.owner}/${CONFIG.repo}/contents`;
 const HEADERS = { 'Content-Type': 'application/json', 'Authorization': `token ${TOKEN}` };
 
@@ -114,32 +115,25 @@ let products = [];
 let recipientCount = 0;
 
 async function init() {
-  try {
-    products = await fetchFile('products.json');
-    addIncomingProduct();
-    addRecipient();
-  } catch (e) { showToast('无法加载产品列表: ' + e.message, 'error'); }
+  try { products = await fetchFile('products.json'); addIncomingProduct(); addRecipient(); }
+  catch (e) { showToast('无法加载产品列表: ' + e.message, 'error'); }
 }
 
 async function fetchFile(path) {
   const res = await fetch(`${API}/${path}`, { headers: HEADERS });
   if (!res.ok) throw new Error('读取失败');
-  const data = await res.json();
-  return JSON.parse(atob(data.content));
+  const data = await res.json(); return JSON.parse(atob(data.content));
 }
 
 async function fetchFileWithSha(path) {
   const res = await fetch(`${API}/${path}`, { headers: HEADERS });
   if (!res.ok) throw new Error('读取失败');
-  const data = await res.json();
-  return { content: JSON.parse(atob(data.content)), sha: data.sha };
+  const data = await res.json(); return { content: JSON.parse(atob(data.content)), sha: data.sha };
 }
 
 async function updateFile(path, content, sha, message) {
-  const res = await fetch(`${API}/${path}`, {
-    method: 'PUT', headers: HEADERS,
-    body: JSON.stringify({ content: btoa(unescape(encodeURIComponent(JSON.stringify(content, null, 2)))), sha, message }),
-  });
+  const res = await fetch(`${API}/${path}`, { method: 'PUT', headers: HEADERS,
+    body: JSON.stringify({ content: btoa(unescape(encodeURIComponent(JSON.stringify(content, null, 2)))), sha, message }) });
   if (!res.ok) { const err = await res.json(); throw new Error(err.message || '写入失败'); }
   return res.json();
 }
@@ -151,77 +145,40 @@ async function writeOrderWithRetry(newOrder, maxRetries = 3) {
       orders.push(newOrder);
       await updateFile('orders.json', orders, sha, `新订单 ${newOrder.id}`);
       return true;
-    } catch (e) {
-      if (i === maxRetries - 1) throw e;
-      await new Promise(r => setTimeout(r, 500 * (i + 1)));
-    }
+    } catch (e) { if (i === maxRetries - 1) throw e; await new Promise(r => setTimeout(r, 500 * (i + 1))); }
   }
 }
 
 function productOptions() { return products.map(p => `<option value="${p.id}">${p.name}</option>`).join(''); }
 
 function addIncomingProduct() {
-  const c = document.getElementById('incomingProducts');
-  const d = document.createElement('div'); d.className = 'product-line';
-  d.innerHTML = `<select onchange="validateProducts()">${productOptions()}</select>
-    <input type="number" min="1" value="1" placeholder="数量" onchange="validateProducts()" oninput="validateProducts()">
-    <button class="remove-product-btn" onclick="this.parentElement.remove();validateProducts()">×</button>`;
+  const c = document.getElementById('incomingProducts'); const d = document.createElement('div'); d.className = 'product-line';
+  d.innerHTML = `<select onchange="validateProducts()">${productOptions()}</select><input type="number" min="1" value="1" placeholder="数量" onchange="validateProducts()" oninput="validateProducts()"><button class="remove-product-btn" onclick="this.parentElement.remove();validateProducts()">×</button>`;
   c.appendChild(d);
 }
 
 function addRecipient() {
-  recipientCount++;
-  const c = document.getElementById('recipientList');
-  const d = document.createElement('div'); d.className = 'recipient-card'; d.id = `recipient-${recipientCount}`;
-  const n = recipientCount;
-  d.innerHTML = `<div class="recipient-header"><span>收件人 #${n}</span><button class="btn btn-danger btn-small" onclick="removeRecipient(${n})">删除</button></div>
-    <div class="form-row"><div class="form-group"><label>姓名</label><input type="text" class="r-name" placeholder="收件人姓名"></div>
-    <div class="form-group"><label>联系电话</label><input type="text" class="r-phone" placeholder="电话号码"></div></div>
-    <div class="form-group" style="margin-bottom:12px;"><label>地址</label><input type="text" class="r-address" placeholder="收件地址"></div>
-    <label>产品</label><div class="r-products"></div>
-    <button class="btn btn-outline btn-small" onclick="addRecipientProduct(${n})" style="margin-top:4px;margin-bottom:8px;">+ 添加产品</button>
-    <div class="form-group"><label>备注</label><textarea class="r-notes" placeholder="备注（选填）"></textarea></div>`;
-  c.appendChild(d);
-  addRecipientProduct(n);
+  recipientCount++; const c = document.getElementById('recipientList'); const d = document.createElement('div'); d.className = 'recipient-card'; d.id = `recipient-${recipientCount}`; const n = recipientCount;
+  d.innerHTML = `<div class="recipient-header"><span>收件人 #${n}</span><button class="btn btn-danger btn-small" onclick="removeRecipient(${n})">删除</button></div><div class="form-row"><div class="form-group"><label>姓名</label><input type="text" class="r-name" placeholder="收件人姓名"></div><div class="form-group"><label>联系电话</label><input type="text" class="r-phone" placeholder="电话号码"></div></div><div class="form-group" style="margin-bottom:12px;"><label>地址</label><input type="text" class="r-address" placeholder="收件地址"></div><label>产品</label><div class="r-products"></div><button class="btn btn-outline btn-small" onclick="addRecipientProduct(${n})" style="margin-top:4px;margin-bottom:8px;">+ 添加产品</button><div class="form-group"><label>备注</label><textarea class="r-notes" placeholder="备注（选填）"></textarea></div>`;
+  c.appendChild(d); addRecipientProduct(n);
 }
 
 function removeRecipient(n) { const el = document.getElementById(`recipient-${n}`); if (el) { el.remove(); validateProducts(); } }
 
 function addRecipientProduct(n) {
   const card = document.getElementById(`recipient-${n}`); if (!card) return;
-  const c = card.querySelector('.r-products');
-  const d = document.createElement('div'); d.className = 'product-line';
-  d.innerHTML = `<select onchange="validateProducts()">${productOptions()}</select>
-    <input type="number" min="1" value="1" placeholder="数量" onchange="validateProducts()" oninput="validateProducts()">
-    <button class="remove-product-btn" onclick="this.parentElement.remove();validateProducts()">×</button>`;
+  const c = card.querySelector('.r-products'); const d = document.createElement('div'); d.className = 'product-line';
+  d.innerHTML = `<select onchange="validateProducts()">${productOptions()}</select><input type="number" min="1" value="1" placeholder="数量" onchange="validateProducts()" oninput="validateProducts()"><button class="remove-product-btn" onclick="this.parentElement.remove();validateProducts()">×</button>`;
   c.appendChild(d);
 }
 
-function getIncomingTotals() {
-  const t = {};
-  document.querySelectorAll('#incomingProducts .product-line').forEach(l => {
-    const id = l.querySelector('select').value; const qty = parseInt(l.querySelector('input').value) || 0;
-    t[id] = (t[id] || 0) + qty;
-  }); return t;
-}
-
-function getOutgoingTotals() {
-  const t = {};
-  document.querySelectorAll('.recipient-card .r-products .product-line').forEach(l => {
-    const id = l.querySelector('select').value; const qty = parseInt(l.querySelector('input').value) || 0;
-    t[id] = (t[id] || 0) + qty;
-  }); return t;
-}
+function getIncomingTotals() { const t = {}; document.querySelectorAll('#incomingProducts .product-line').forEach(l => { const id = l.querySelector('select').value; const q = parseInt(l.querySelector('input').value) || 0; t[id] = (t[id] || 0) + q; }); return t; }
+function getOutgoingTotals() { const t = {}; document.querySelectorAll('.recipient-card .r-products .product-line').forEach(l => { const id = l.querySelector('select').value; const q = parseInt(l.querySelector('input').value) || 0; t[id] = (t[id] || 0) + q; }); return t; }
 
 function validateProducts() {
-  const inc = getIncomingTotals(), out = getOutgoingTotals();
-  const box = document.getElementById('validationBox');
-  const allIds = new Set([...Object.keys(inc), ...Object.keys(out)]);
-  const mm = [];
-  for (const id of allIds) {
-    const i = inc[id] || 0, o = out[id] || 0;
-    if (i !== o) { const name = products.find(p => p.id === id)?.name || id; mm.push(`${name}: 来件 ${i}, 收件合计 ${o}`); }
-  }
+  const inc = getIncomingTotals(), out = getOutgoingTotals(); const box = document.getElementById('validationBox');
+  const allIds = new Set([...Object.keys(inc), ...Object.keys(out)]); const mm = [];
+  for (const id of allIds) { const i = inc[id] || 0, o = out[id] || 0; if (i !== o) { const name = products.find(p => p.id === id)?.name || id; mm.push(`${name}: 来件 ${i}, 收件合计 ${o}`); } }
   if (mm.length > 0) { box.className = 'validation-box warn'; box.innerHTML = '<strong>产品数量不匹配：</strong><br>' + mm.join('<br>'); return false; }
   else if (Object.keys(inc).length > 0) { box.className = 'validation-box ok'; box.textContent = '产品数量匹配'; return true; }
   else { box.className = 'validation-box'; box.style.display = 'none'; return false; }
@@ -231,56 +188,30 @@ async function submitOrder() {
   const expressCode = document.getElementById('expressCode').value.trim();
   const pickupCode = document.getElementById('pickupCode').value.trim();
   if (!expressCode || !pickupCode) { showToast('请填写订单号和取货码', 'error'); return; }
-
   const incomingProducts = [];
-  document.querySelectorAll('#incomingProducts .product-line').forEach(l => {
-    const sel = l.querySelector('select'); const qty = parseInt(l.querySelector('input').value) || 0;
-    if (qty > 0) { const prod = products.find(p => p.id === sel.value); incomingProducts.push({ product_id: sel.value, name: prod ? prod.name : sel.value, quantity: qty }); }
-  });
+  document.querySelectorAll('#incomingProducts .product-line').forEach(l => { const sel = l.querySelector('select'); const q = parseInt(l.querySelector('input').value) || 0; if (q > 0) { const prod = products.find(p => p.id === sel.value); incomingProducts.push({ product_id: sel.value, name: prod ? prod.name : sel.value, quantity: q }); } });
   if (incomingProducts.length === 0) { showToast('请至少添加一个来件产品', 'error'); return; }
-
   const outgoing = [];
   for (const card of document.querySelectorAll('.recipient-card')) {
-    const name = card.querySelector('.r-name').value.trim();
-    const phone = card.querySelector('.r-phone').value.trim();
-    const address = card.querySelector('.r-address').value.trim();
-    const notes = card.querySelector('.r-notes').value.trim();
+    const name = card.querySelector('.r-name').value.trim(); const phone = card.querySelector('.r-phone').value.trim();
+    const address = card.querySelector('.r-address').value.trim(); const notes = card.querySelector('.r-notes').value.trim();
     if (!name || !phone || !address) { showToast('请填写所有收件人的姓名、电话和地址', 'error'); return; }
     const rp = [];
-    card.querySelectorAll('.r-products .product-line').forEach(l => {
-      const sel = l.querySelector('select'); const qty = parseInt(l.querySelector('input').value) || 0;
-      if (qty > 0) { const prod = products.find(p => p.id === sel.value); rp.push({ product_id: sel.value, name: prod ? prod.name : sel.value, quantity: qty }); }
-    });
+    card.querySelectorAll('.r-products .product-line').forEach(l => { const sel = l.querySelector('select'); const q = parseInt(l.querySelector('input').value) || 0; if (q > 0) { const prod = products.find(p => p.id === sel.value); rp.push({ product_id: sel.value, name: prod ? prod.name : sel.value, quantity: q }); } });
     if (rp.length === 0) { showToast(`收件人 ${name} 至少需要一个产品`, 'error'); return; }
     outgoing.push({ name, phone, address, products: rp, notes });
   }
   if (outgoing.length === 0) { showToast('请至少添加一个收件人', 'error'); return; }
   if (!validateProducts()) { showToast('收件人产品数量与来件不匹配，无法提交', 'error'); return; }
-
-  const order = {
-    id: 'ORD_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
-    created_at: new Date().toISOString(), status: '待处理', picked_up: false, shipped: false,
-    incoming: { express_code: expressCode, pickup_code: pickupCode, products: incomingProducts }, outgoing,
-  };
-
+  const order = { id: 'ORD_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4), created_at: new Date().toISOString(), status: '待处理', picked_up: false, shipped: false, incoming: { express_code: expressCode, pickup_code: pickupCode, products: incomingProducts }, outgoing };
   showLoading(true);
-  try {
-    await writeOrderWithRetry(order);
-    showToast('订单提交成功！', 'success');
-    document.getElementById('expressCode').value = ''; document.getElementById('pickupCode').value = '';
-    document.getElementById('incomingProducts').innerHTML = ''; document.getElementById('recipientList').innerHTML = '';
-    document.getElementById('validationBox').className = 'validation-box'; recipientCount = 0;
-    addIncomingProduct(); addRecipient();
-  } catch (e) { showToast('提交失败: ' + e.message, 'error'); }
+  try { await writeOrderWithRetry(order); showToast('订单提交成功！', 'success'); document.getElementById('expressCode').value = ''; document.getElementById('pickupCode').value = ''; document.getElementById('incomingProducts').innerHTML = ''; document.getElementById('recipientList').innerHTML = ''; document.getElementById('validationBox').className = 'validation-box'; recipientCount = 0; addIncomingProduct(); addRecipient(); }
+  catch (e) { showToast('提交失败: ' + e.message, 'error'); }
   showLoading(false);
 }
 
-function showToast(msg, type) {
-  const t = document.getElementById('toast'); t.textContent = msg; t.className = 'toast ' + type; t.style.display = 'block';
-  setTimeout(() => { t.style.display = 'none'; }, 3500);
-}
+function showToast(msg, type) { const t = document.getElementById('toast'); t.textContent = msg; t.className = 'toast ' + type; t.style.display = 'block'; setTimeout(() => { t.style.display = 'none'; }, 3500); }
 function showLoading(on) { document.getElementById('loading').classList.toggle('active', on); }
-
 init();
 </script>
 </body>
