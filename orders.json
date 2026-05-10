@@ -9,8 +9,16 @@
       "express_code": "DD20250508001",
       "pickup_code": "8832",
       "products": [
-        {"product_id": "p001", "name": "产品A", "quantity": 20},
-        {"product_id": "p002", "name": "产品B", "quantity": 10}
+        {
+          "product_id": "p001",
+          "name": "产品A",
+          "quantity": 20
+        },
+        {
+          "product_id": "p002",
+          "name": "产品B",
+          "quantity": 10
+        }
       ]
     },
     "outgoing": [
@@ -19,8 +27,16 @@
         "phone": "13800001111",
         "address": "北京市朝阳区建国路88号",
         "products": [
-          {"product_id": "p001", "name": "产品A", "quantity": 10},
-          {"product_id": "p002", "name": "产品B", "quantity": 5}
+          {
+            "product_id": "p001",
+            "name": "产品A",
+            "quantity": 10
+          },
+          {
+            "product_id": "p002",
+            "name": "产品B",
+            "quantity": 5
+          }
         ],
         "notes": "工作日白天送"
       },
@@ -29,8 +45,16 @@
         "phone": "13900002222",
         "address": "上海市浦东新区陆家嘴环路100号",
         "products": [
-          {"product_id": "p001", "name": "产品A", "quantity": 10},
-          {"product_id": "p002", "name": "产品B", "quantity": 5}
+          {
+            "product_id": "p001",
+            "name": "产品A",
+            "quantity": 10
+          },
+          {
+            "product_id": "p002",
+            "name": "产品B",
+            "quantity": 5
+          }
         ],
         "notes": ""
       }
@@ -46,8 +70,16 @@
       "express_code": "DD20250507003",
       "pickup_code": "6654",
       "products": [
-        {"product_id": "p001", "name": "产品A", "quantity": 15},
-        {"product_id": "p003", "name": "产品C", "quantity": 8}
+        {
+          "product_id": "p001",
+          "name": "产品A",
+          "quantity": 15
+        },
+        {
+          "product_id": "p003",
+          "name": "产品C",
+          "quantity": 8
+        }
       ]
     },
     "outgoing": [
@@ -56,8 +88,16 @@
         "phone": "13700003333",
         "address": "广州市天河区体育西路50号",
         "products": [
-          {"product_id": "p001", "name": "产品A", "quantity": 5},
-          {"product_id": "p003", "name": "产品C", "quantity": 8}
+          {
+            "product_id": "p001",
+            "name": "产品A",
+            "quantity": 5
+          },
+          {
+            "product_id": "p003",
+            "name": "产品C",
+            "quantity": 8
+          }
         ],
         "notes": "放快递柜"
       },
@@ -66,7 +106,11 @@
         "phone": "13600004444",
         "address": "深圳市南山区科技园路200号",
         "products": [
-          {"product_id": "p001", "name": "产品A", "quantity": 10}
+          {
+            "product_id": "p001",
+            "name": "产品A",
+            "quantity": 10
+          }
         ],
         "notes": ""
       }
@@ -82,7 +126,11 @@
       "express_code": "DD20250506002",
       "pickup_code": "3321",
       "products": [
-        {"product_id": "p002", "name": "产品B", "quantity": 12}
+        {
+          "product_id": "p002",
+          "name": "产品B",
+          "quantity": 12
+        }
       ]
     },
     "outgoing": [
@@ -91,7 +139,11 @@
         "phone": "13500005555",
         "address": "成都市武侯区天府大道999号",
         "products": [
-          {"product_id": "p002", "name": "产品B", "quantity": 7}
+          {
+            "product_id": "p002",
+            "name": "产品B",
+            "quantity": 7
+          }
         ],
         "notes": "易碎品请轻放"
       },
@@ -100,7 +152,63 @@
         "phone": "13400006666",
         "address": "杭州市西湖区文三路100号",
         "products": [
-          {"product_id": "p002", "name": "产品B", "quantity": 5}
+          {
+            "product_id": "p002",
+            "name": "产品B",
+            "quantity": 5
+          }
+        ],
+        "notes": ""
+      }
+    ]
+  },
+  {
+    "id": "ORD_1778423952127_pdke",
+    "created_at": "2026-05-10T14:39:12.127Z",
+    "created_by": "xiaoming",
+    "status": "待处理",
+    "picked_up": false,
+    "shipped": false,
+    "incoming": {
+      "express_code": "12345",
+      "pickup_code": "54321",
+      "products": [
+        {
+          "product_id": "Mind",
+          "name": "敏动力Mind",
+          "quantity": 5
+        },
+        {
+          "product_id": "Reserve",
+          "name": "沛泉Reserve",
+          "quantity": 5
+        }
+      ]
+    },
+    "outgoing": [
+      {
+        "name": "xiaogang",
+        "phone": "66554433",
+        "address": "rewnjin",
+        "products": [
+          {
+            "product_id": "Reserve",
+            "name": "沛泉Reserve",
+            "quantity": 5
+          }
+        ],
+        "notes": ""
+      },
+      {
+        "name": "shidan",
+        "phone": "987",
+        "address": "buzhidao",
+        "products": [
+          {
+            "product_id": "Mind",
+            "name": "敏动力Mind",
+            "quantity": 5
+          }
         ],
         "notes": ""
       }
