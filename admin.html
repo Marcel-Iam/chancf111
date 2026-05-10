@@ -229,11 +229,13 @@ async function initAdmin() {
 }
 
 // ===== GitHub API =====
+function decodeB64(str) { const bytes = Uint8Array.from(atob(str), c => c.charCodeAt(0)); return new TextDecoder().decode(bytes); }
+
 async function fetchFileWithSha(path) {
   const res = await fetch(`${API}/${path}`, { headers: HEADERS });
   if (!res.ok) throw new Error('读取失败');
   const data = await res.json();
-  return { content: JSON.parse(atob(data.content)), sha: data.sha };
+  return { content: JSON.parse(decodeB64(data.content)), sha: data.sha };
 }
 
 async function updateFile(path, content, sha, message) {
@@ -487,7 +489,7 @@ async function uploadPdf(folder, filename, blob, commitMsg, meta) {
   await createFile(`${folder}/${filename}`, b64, commitMsg);
   const ip = `${folder}/index.json`;
   let idx=[], sha=null;
-  try { const res=await fetch(`${API}/${ip}`,{headers:HEADERS}); if(res.ok){const d=await res.json(); idx=JSON.parse(atob(d.content)); sha=d.sha;} } catch(e){}
+  try { const res=await fetch(`${API}/${ip}`,{headers:HEADERS}); if(res.ok){const d=await res.json(); idx=JSON.parse(decodeB64(d.content)); sha=d.sha;} } catch(e){}
   idx.push({ filename, ...meta, created_at:new Date().toISOString() });
   const enc=btoa(unescape(encodeURIComponent(JSON.stringify(idx,null,2))));
   const body = { content:enc, message:'更新索引' };
@@ -499,7 +501,7 @@ async function uploadPdf(folder, filename, blob, commitMsg, meta) {
 async function loadHistory() {
   const c=document.getElementById('historyList'); let all=[];
   for (const f of [HISTORY_PICKUP, HISTORY_SHIPPING]) {
-    try { const res=await fetch(`${API}/${f}/index.json`,{headers:HEADERS}); if(res.ok){const d=await res.json(); const data=JSON.parse(atob(d.content)); data.forEach(e=>{e._folder=f;}); all=all.concat(data);} } catch(e){}
+    try { const res=await fetch(`${API}/${f}/index.json`,{headers:HEADERS}); if(res.ok){const d=await res.json(); const data=JSON.parse(decodeB64(d.content)); data.forEach(e=>{e._folder=f;}); all=all.concat(data);} } catch(e){}
   }
   document.getElementById('historyCount').textContent=`${all.length} 个历史档案`;
   if(!all.length){c.innerHTML='<div class="empty-state">没有历史档案</div>';return;}

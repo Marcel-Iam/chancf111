@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>提交订单</title>
+<title>凤姐派单</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600&display=swap');
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -63,7 +63,7 @@
 </head>
 <body>
 <div class="container">
-  <h1>提交订单</h1>
+  <h1>凤姐派单</h1>
   <p class="subtitle">填写来件信息，并添加收件人</p>
   <div class="section">
     <div class="section-title">来件信息</div>
@@ -114,6 +114,8 @@ const HEADERS = { 'Content-Type': 'application/json', 'Authorization': `token ${
 let products = [];
 let recipientCount = 0;
 
+function decodeB64(str) { const bytes = Uint8Array.from(atob(str), c => c.charCodeAt(0)); return new TextDecoder().decode(bytes); }
+
 async function init() {
   try { products = await fetchFile('products.json'); addIncomingProduct(); addRecipient(); }
   catch (e) { showToast('无法加载产品列表: ' + e.message, 'error'); }
@@ -122,13 +124,13 @@ async function init() {
 async function fetchFile(path) {
   const res = await fetch(`${API}/${path}`, { headers: HEADERS });
   if (!res.ok) throw new Error('读取失败');
-  const data = await res.json(); return JSON.parse(atob(data.content));
+  const data = await res.json(); return JSON.parse(decodeB64(data.content));
 }
 
 async function fetchFileWithSha(path) {
   const res = await fetch(`${API}/${path}`, { headers: HEADERS });
   if (!res.ok) throw new Error('读取失败');
-  const data = await res.json(); return { content: JSON.parse(atob(data.content)), sha: data.sha };
+  const data = await res.json(); return { content: JSON.parse(decodeB64(data.content)), sha: data.sha };
 }
 
 async function updateFile(path, content, sha, message) {
