@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>提交订单</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg: #f5f0eb; --card: #ffffff; --border: #d4cdc4;
+    --text: #2c2825; --text-light: #7a7269;
+    --accent: #b8860b; --accent-hover: #9a7209;
+    --danger: #c0392b; --success: #27ae60; --input-bg: #faf8f5;
+    --warn-bg: #fff3cd; --warn-border: #e6c34d; --warn-text: #856404;
+  }
+  body { font-family: 'Noto Sans SC', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding: 20px; }
+  .container { max-width: 700px; margin: 0 auto; }
+  h1 { font-weight: 500; font-size: 1.5rem; margin-bottom: 8px; color: var(--accent); }
+  .subtitle { color: var(--text-light); font-size: 0.85rem; margin-bottom: 28px; }
+  .section { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 24px; margin-bottom: 20px; }
+  .section-title { font-weight: 500; font-size: 1rem; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  .form-row { display: flex; gap: 12px; margin-bottom: 12px; }
+  .form-group { flex: 1; display: flex; flex-direction: column; }
+  label { font-size: 0.8rem; color: var(--text-light); margin-bottom: 4px; }
+  input, select, textarea {
+    font-family: 'Noto Sans SC', sans-serif; padding: 8px 10px; border: 1px solid var(--border);
+    border-radius: 4px; font-size: 0.9rem; background: var(--input-bg); color: var(--text); transition: border-color 0.2s;
+  }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); }
+  textarea { resize: vertical; min-height: 50px; }
+  .product-line { display: flex; gap: 8px; align-items: flex-end; margin-bottom: 8px; }
+  .product-line select { flex: 3; }
+  .product-line input { flex: 1; min-width: 60px; }
+  .btn { font-family: 'Noto Sans SC', sans-serif; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: 500; transition: background 0.2s; }
+  .btn-small { padding: 4px 10px; font-size: 0.8rem; }
+  .btn-accent { background: var(--accent); color: #fff; }
+  .btn-accent:hover { background: var(--accent-hover); }
+  .btn-accent:disabled { background: #ccc; cursor: not-allowed; }
+  .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-light); }
+  .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-danger { background: transparent; border: 1px solid var(--danger); color: var(--danger); }
+  .btn-danger:hover { background: var(--danger); color: #fff; }
+  .btn-submit { width: 100%; padding: 12px; font-size: 1rem; margin-top: 8px; }
+  .recipient-card { border: 1px solid var(--border); border-radius: 6px; padding: 16px; margin-bottom: 12px; background: var(--input-bg); position: relative; }
+  .recipient-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .recipient-header span { font-weight: 500; font-size: 0.9rem; }
+  .add-recipient-btn { width: 100%; padding: 10px; border: 2px dashed var(--border); background: transparent; border-radius: 6px; color: var(--text-light); cursor: pointer; font-family: 'Noto Sans SC', sans-serif; font-size: 0.9rem; transition: all 0.2s; }
+  .add-recipient-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .remove-product-btn { background: none; border: none; color: var(--danger); cursor: pointer; font-size: 1.1rem; padding: 4px 8px; line-height: 1; }
+  .validation-box { padding: 12px 16px; border-radius: 6px; font-size: 0.85rem; margin-bottom: 16px; display: none; }
+  .validation-box.warn { display: block; background: var(--warn-bg); border: 1px solid var(--warn-border); color: var(--warn-text); }
+  .validation-box.ok { display: block; background: #d5f5e3; border: 1px solid #82e0aa; color: #1e8449; }
+  .toast { position: fixed; top: 20px; right: 20px; padding: 12px 20px; border-radius: 6px; color: #fff; font-size: 0.9rem; z-index: 999; display: none; animation: slideIn 0.3s ease; }
+  .toast.success { background: var(--success); }
+  .toast.error { background: var(--danger); }
+  @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+  .loading-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.3); display: none; justify-content: center; align-items: center; z-index: 998; }
+  .loading-overlay.active { display: flex; }
+  .spinner { width: 40px; height: 40px; border: 3px solid #fff; border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (max-width: 500px) { .form-row { flex-direction: column; gap: 8px; } body { padding: 12px; } .section { padding: 16px; } }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>提交订单</h1>
+  <p class="subtitle">填写来件信息，并添加收件人</p>
+
+  <div class="section">
+    <div class="section-title">来件信息</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>订单号</label>
+        <input type="text" id="expressCode" placeholder="输入订单号">
+      </div>
+      <div class="form-group">
+        <label>取货码</label>
+        <input type="text" id="pickupCode" placeholder="输入取货码">
+      </div>
+    </div>
+    <label>来件产品</label>
+    <div id="incomingProducts"></div>
+    <button class="btn btn-outline btn-small" onclick="addIncomingProduct()" style="margin-top:4px;">+ 添加产品</button>
+  </div>
+
+  <div class="section">
+    <div class="section-title">收件人信息</div>
+    <div id="validationBox" class="validation-box"></div>
+    <div id="recipientList"></div>
+    <button class="add-recipient-btn" onclick="addRecipient()">+ 添加收件人</button>
+  </div>
+
+  <button class="btn btn-accent btn-submit" id="submitBtn" onclick="submitOrder()">提交订单</button>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="loading-overlay" id="loading"><div class="spinner"></div></div>
+
+<script>
+const CONFIG = {
+  owner: '你的Gitee用户名',
+  repo: '你的仓库名',
+  token: '你的Token',
+  ordersPath: 'orders.json',
+  productsPath: 'products.json',
+};
+const API = `https://gitee.com/api/v5/repos/${CONFIG.owner}/${CONFIG.repo}/contents`;
+
+let products = [];
+let recipientCount = 0;
+
+async function init() {
+  try {
+    products = await fetchFile(CONFIG.productsPath);
+    addIncomingProduct();
+    addRecipient();
+  } catch (e) { showToast('无法加载产品列表: ' + e.message, 'error'); }
+}
+
+async function fetchFile(path) {
+  const res = await fetch(`${API}/${path}?access_token=${CONFIG.token}`);
+  if (!res.ok) throw new Error('读取失败');
+  const data = await res.json();
+  return JSON.parse(atob(data.content));
+}
+
+async function fetchFileWithSha(path) {
+  const res = await fetch(`${API}/${path}?access_token=${CONFIG.token}`);
+  if (!res.ok) throw new Error('读取失败');
+  const data = await res.json();
+  return { content: JSON.parse(atob(data.content)), sha: data.sha };
+}
+
+async function updateFile(path, content, sha, message) {
+  const res = await fetch(`${API}/${path}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      access_token: CONFIG.token,
+      content: btoa(unescape(encodeURIComponent(JSON.stringify(content, null, 2)))),
+      sha, message,
+    }),
+  });
+  if (!res.ok) { const err = await res.json(); throw new Error(err.message || '写入失败'); }
+  return res.json();
+}
+
+async function writeOrderWithRetry(newOrder, maxRetries = 3) {
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      const { content: orders, sha } = await fetchFileWithSha(CONFIG.ordersPath);
+      orders.push(newOrder);
+      await updateFile(CONFIG.ordersPath, orders, sha, `新订单 ${newOrder.id}`);
+      return true;
+    } catch (e) {
+      if (i === maxRetries - 1) throw e;
+      await new Promise(r => setTimeout(r, 500 * (i + 1)));
+    }
+  }
+}
+
+function productOptions() {
+  return products.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+}
+
+function addIncomingProduct() {
+  const container = document.getElementById('incomingProducts');
+  const div = document.createElement('div');
+  div.className = 'product-line';
+  div.innerHTML = `
+    <select onchange="validateProducts()">${productOptions()}</select>
+    <input type="number" min="1" value="1" placeholder="数量" onchange="validateProducts()" oninput="validateProducts()">
+    <button class="remove-product-btn" onclick="this.parentElement.remove();validateProducts()">×</button>
+  `;
+  container.appendChild(div);
+}
+
+function addRecipient() {
+  recipientCount++;
+  const container = document.getElementById('recipientList');
+  const div = document.createElement('div');
+  div.className = 'recipient-card';
+  div.id = `recipient-${recipientCount}`;
+  const n = recipientCount;
+  div.innerHTML = `
+    <div class="recipient-header">
+      <span>收件人 #${n}</span>
+      <button class="btn btn-danger btn-small" onclick="removeRecipient(${n})">删除</button>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>姓名</label><input type="text" class="r-name" placeholder="收件人姓名"></div>
+      <div class="form-group"><label>联系电话</label><input type="text" class="r-phone" placeholder="电话号码"></div>
+    </div>
+    <div class="form-group" style="margin-bottom:12px;"><label>地址</label><input type="text" class="r-address" placeholder="收件地址"></div>
+    <label>产品</label>
+    <div class="r-products"></div>
+    <button class="btn btn-outline btn-small" onclick="addRecipientProduct(${n})" style="margin-top:4px;margin-bottom:8px;">+ 添加产品</button>
+    <div class="form-group"><label>备注</label><textarea class="r-notes" placeholder="备注（选填）"></textarea></div>
+  `;
+  container.appendChild(div);
+  addRecipientProduct(n);
+}
+
+function removeRecipient(n) {
+  const el = document.getElementById(`recipient-${n}`);
+  if (el) { el.remove(); validateProducts(); }
+}
+
+function addRecipientProduct(n) {
+  const card = document.getElementById(`recipient-${n}`);
+  if (!card) return;
+  const container = card.querySelector('.r-products');
+  const div = document.createElement('div');
+  div.className = 'product-line';
+  div.innerHTML = `
+    <select onchange="validateProducts()">${productOptions()}</select>
+    <input type="number" min="1" value="1" placeholder="数量" onchange="validateProducts()" oninput="validateProducts()">
+    <button class="remove-product-btn" onclick="this.parentElement.remove();validateProducts()">×</button>
+  `;
+  container.appendChild(div);
+}
+
+// ===== Validation =====
+function getIncomingTotals() {
+  const totals = {};
+  document.querySelectorAll('#incomingProducts .product-line').forEach(line => {
+    const id = line.querySelector('select').value;
+    const qty = parseInt(line.querySelector('input').value) || 0;
+    totals[id] = (totals[id] || 0) + qty;
+  });
+  return totals;
+}
+
+function getOutgoingTotals() {
+  const totals = {};
+  document.querySelectorAll('.recipient-card .r-products .product-line').forEach(line => {
+    const id = line.querySelector('select').value;
+    const qty = parseInt(line.querySelector('input').value) || 0;
+    totals[id] = (totals[id] || 0) + qty;
+  });
+  return totals;
+}
+
+function validateProducts() {
+  const incoming = getIncomingTotals();
+  const outgoing = getOutgoingTotals();
+  const box = document.getElementById('validationBox');
+
+  const allIds = new Set([...Object.keys(incoming), ...Object.keys(outgoing)]);
+  const mismatches = [];
+
+  for (const id of allIds) {
+    const inQty = incoming[id] || 0;
+    const outQty = outgoing[id] || 0;
+    if (inQty !== outQty) {
+      const name = products.find(p => p.id === id)?.name || id;
+      mismatches.push(`${name}: 来件 ${inQty}, 收件合计 ${outQty}`);
+    }
+  }
+
+  if (mismatches.length > 0) {
+    box.className = 'validation-box warn';
+    box.innerHTML = '<strong>产品数量不匹配：</strong><br>' + mismatches.join('<br>');
+    return false;
+  } else if (Object.keys(incoming).length > 0) {
+    box.className = 'validation-box ok';
+    box.textContent = '产品数量匹配';
+    return true;
+  } else {
+    box.className = 'validation-box';
+    box.style.display = 'none';
+    return false;
+  }
+}
+
+async function submitOrder() {
+  const expressCode = document.getElementById('expressCode').value.trim();
+  const pickupCode = document.getElementById('pickupCode').value.trim();
+
+  if (!expressCode || !pickupCode) { showToast('请填写订单号和取货码', 'error'); return; }
+
+  const incomingLines = document.querySelectorAll('#incomingProducts .product-line');
+  const incomingProducts = [];
+  for (const line of incomingLines) {
+    const sel = line.querySelector('select');
+    const qty = parseInt(line.querySelector('input').value) || 0;
+    if (qty > 0) {
+      const prod = products.find(p => p.id === sel.value);
+      incomingProducts.push({ product_id: sel.value, name: prod ? prod.name : sel.value, quantity: qty });
+    }
+  }
+  if (incomingProducts.length === 0) { showToast('请至少添加一个来件产品', 'error'); return; }
+
+  const recipientCards = document.querySelectorAll('.recipient-card');
+  const outgoing = [];
+  for (const card of recipientCards) {
+    const name = card.querySelector('.r-name').value.trim();
+    const phone = card.querySelector('.r-phone').value.trim();
+    const address = card.querySelector('.r-address').value.trim();
+    const notes = card.querySelector('.r-notes').value.trim();
+    if (!name || !phone || !address) { showToast('请填写所有收件人的姓名、电话和地址', 'error'); return; }
+
+    const recipientProducts = [];
+    card.querySelectorAll('.r-products .product-line').forEach(line => {
+      const sel = line.querySelector('select');
+      const qty = parseInt(line.querySelector('input').value) || 0;
+      if (qty > 0) {
+        const prod = products.find(p => p.id === sel.value);
+        recipientProducts.push({ product_id: sel.value, name: prod ? prod.name : sel.value, quantity: qty });
+      }
+    });
+    if (recipientProducts.length === 0) { showToast(`收件人 ${name} 至少需要一个产品`, 'error'); return; }
+    outgoing.push({ name, phone, address, products: recipientProducts, notes });
+  }
+  if (outgoing.length === 0) { showToast('请至少添加一个收件人', 'error'); return; }
+
+  // Validate product match
+  if (!validateProducts()) { showToast('收件人产品数量与来件不匹配，无法提交', 'error'); return; }
+
+  const order = {
+    id: 'ORD_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+    created_at: new Date().toISOString(),
+    status: '待处理',
+    picked_up: false,
+    shipped: false,
+    incoming: { express_code: expressCode, pickup_code: pickupCode, products: incomingProducts },
+    outgoing,
+  };
+
+  showLoading(true);
+  try {
+    await writeOrderWithRetry(order);
+    showToast('订单提交成功！', 'success');
+    document.getElementById('expressCode').value = '';
+    document.getElementById('pickupCode').value = '';
+    document.getElementById('incomingProducts').innerHTML = '';
+    document.getElementById('recipientList').innerHTML = '';
+    document.getElementById('validationBox').className = 'validation-box';
+    recipientCount = 0;
+    addIncomingProduct();
+    addRecipient();
+  } catch (e) { showToast('提交失败: ' + e.message, 'error'); }
+  showLoading(false);
+}
+
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast ' + type; t.style.display = 'block';
+  setTimeout(() => { t.style.display = 'none'; }, 3500);
+}
+function showLoading(on) { document.getElementById('loading').classList.toggle('active', on); }
+
+init();
+</script>
+</body>
+</html>
