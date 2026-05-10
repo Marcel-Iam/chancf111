@@ -103,10 +103,10 @@
 const CONFIG = {
   owner: 'Marcel-Iam',
   repo: 'chancf111',
-  _k:    'Z2hwX0tzcUVWcVEzWUw0OVJvb1BLcTRwMk9CcUt0b2NDWDJLekR3OQ==',
+  _k:    'Z2hwX0ZKYWZUajNyTldQWExRYllYb2hMM2VPQVh2c0ZhOTE4eG9UcQ==',
 };
 
-const TOKEN = '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';
+const TOKEN = atob(CONFIG._k);
 const API = `https://api.github.com/repos/${CONFIG.owner}/${CONFIG.repo}/contents`;
 const HEADERS = { 'Content-Type': 'application/json', 'Authorization': `token ${TOKEN}` };
 
