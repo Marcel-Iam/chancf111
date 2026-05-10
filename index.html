@@ -15,7 +15,11 @@
     --warn-bg: #fff3cd; --warn-border: #e6c34d; --warn-text: #856404;
   }
   body { font-family: 'Noto Sans SC', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding: 20px; }
-  .container { max-width: 700px; margin: 0 auto; }
+  .container {
+  max-width: 700px;
+  margin: 0 auto;
+  overflow: hidden;
+}
   h1 { font-weight: 500; font-size: 1.5rem; margin-bottom: 8px; color: var(--accent); }
   .subtitle { color: var(--text-light); font-size: 0.85rem; margin-bottom: 28px; }
   .section { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 24px; margin-bottom: 20px; }
@@ -24,9 +28,19 @@
   .form-group { flex: 1; display: flex; flex-direction: column; }
   label { font-size: 0.8rem; color: var(--text-light); margin-bottom: 4px; }
   input, select, textarea {
-    font-family: 'Noto Sans SC', sans-serif; padding: 8px 10px; border: 1px solid var(--border);
-    border-radius: 4px; font-size: 0.9rem; background: var(--input-bg); color: var(--text); transition: border-color 0.2s;
-  }
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+
+    font-family: 'Noto Sans SC', sans-serif;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 0.9rem;
+    background: var(--input-bg);
+    color: var(--text);
+    transition: border-color 0.2s;
+}
   input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); }
   textarea { resize: vertical; min-height: 50px; }
   .product-line { display: flex; gap: 8px; align-items: flex-end; margin-bottom: 8px; }
@@ -58,7 +72,20 @@
   .loading-overlay.active { display: flex; }
   .spinner { width: 40px; height: 40px; border: 3px solid #fff; border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
-  @media (max-width: 500px) { .form-row { flex-direction: column; gap: 8px; } body { padding: 12px; } .section { padding: 16px; } }
+  @media (max-width: 700px) { .form-row { flex-direction: column; gap: 8px; } body { padding: 12px; } .section { padding: 16px; } }
+    .container {
+    overflow: hidden;
+}
+
+.product-line {
+    width: 100%;
+    align-items: center;
+}
+
+.product-line input,
+.product-line select {
+    min-width: 0;
+}
 </style>
 </head>
 <body>
@@ -77,10 +104,11 @@
   </div>
   <div class="section">
     <div class="section-title">收件人信息</div>
-    <div id="validationBox" class="validation-box"></div>
+    
     <div id="recipientList"></div>
     <button class="add-recipient-btn" onclick="addRecipient()">+ 添加收件人</button>
   </div>
+    <div id="validationBox" class="validation-box"></div>
   <button class="btn btn-accent btn-submit" onclick="submitOrder()">提交订单</button>
 </div>
 <div class="toast" id="toast"></div>
@@ -155,7 +183,7 @@ function productOptions() { return products.map(p => `<option value="${p.id}">${
 
 function addIncomingProduct() {
   const c = document.getElementById('incomingProducts'); const d = document.createElement('div'); d.className = 'product-line';
-  d.innerHTML = `<select onchange="validateProducts()">${productOptions()}</select><input type="number" min="1" value="1" placeholder="数量" onchange="validateProducts()" oninput="validateProducts()"><button class="remove-product-btn" onclick="this.parentElement.remove();validateProducts()">×</button>`;
+  d.innerHTML = `<select><option value="">请选择产品</option>${productOptions()}</select><input type="number" min="1" placeholder="数量"><button class="remove-product-btn" onclick="this.parentElement.remove()">×</button>`;
   c.appendChild(d);
 }
 
@@ -165,24 +193,48 @@ function addRecipient() {
   c.appendChild(d); addRecipientProduct(n);
 }
 
-function removeRecipient(n) { const el = document.getElementById(`recipient-${n}`); if (el) { el.remove(); validateProducts(); } }
+function removeRecipient(n) {
+  const el = document.getElementById(`recipient-${n}`);
+  if (el) el.remove();
+}
 
 function addRecipientProduct(n) {
   const card = document.getElementById(`recipient-${n}`); if (!card) return;
   const c = card.querySelector('.r-products'); const d = document.createElement('div'); d.className = 'product-line';
-  d.innerHTML = `<select onchange="validateProducts()">${productOptions()}</select><input type="number" min="1" value="1" placeholder="数量" onchange="validateProducts()" oninput="validateProducts()"><button class="remove-product-btn" onclick="this.parentElement.remove();validateProducts()">×</button>`;
+  d.innerHTML = `<select><option value="">请选择产品</option>${productOptions()}</select><input type="number" min="1" placeholder="数量"><button class="remove-product-btn" onclick="this.parentElement.remove()">×</button>`;
   c.appendChild(d);
 }
 
-function getIncomingTotals() { const t = {}; document.querySelectorAll('#incomingProducts .product-line').forEach(l => { const id = l.querySelector('select').value; const q = parseInt(l.querySelector('input').value) || 0; t[id] = (t[id] || 0) + q; }); return t; }
-function getOutgoingTotals() { const t = {}; document.querySelectorAll('.recipient-card .r-products .product-line').forEach(l => { const id = l.querySelector('select').value; const q = parseInt(l.querySelector('input').value) || 0; t[id] = (t[id] || 0) + q; }); return t; }
+function getIncomingTotals() {
+  const t = {};
+  document.querySelectorAll('#incomingProducts .product-line').forEach(l => {
+    const id = l.querySelector('select').value;
+    const q = parseInt(l.querySelector('input').value) || 0;
+    if (id && q > 0) t[id] = (t[id] || 0) + q;
+  });
+  return t;
+}
+
+function getOutgoingTotals() {
+  const t = {};
+  document.querySelectorAll('.recipient-card .r-products .product-line').forEach(l => {
+    const id = l.querySelector('select').value;
+    const q = parseInt(l.querySelector('input').value) || 0;
+    if (id && q > 0) t[id] = (t[id] || 0) + q;
+  });
+  return t;
+}
 
 function validateProducts() {
   const inc = getIncomingTotals(), out = getOutgoingTotals(); const box = document.getElementById('validationBox');
   const allIds = new Set([...Object.keys(inc), ...Object.keys(out)]); const mm = [];
   for (const id of allIds) { const i = inc[id] || 0, o = out[id] || 0; if (i !== o) { const name = products.find(p => p.id === id)?.name || id; mm.push(`${name}: 来件 ${i}, 收件合计 ${o}`); } }
   if (mm.length > 0) { box.className = 'validation-box warn'; box.innerHTML = '<strong>产品数量不匹配：</strong><br>' + mm.join('<br>'); return false; }
-  else if (Object.keys(inc).length > 0) { box.className = 'validation-box ok'; box.textContent = '产品数量匹配'; return true; }
+  else if (Object.keys(inc).length > 0) {
+  box.className = 'validation-box';
+  box.innerHTML = '';
+  return true;
+}
   else { box.className = 'validation-box'; box.style.display = 'none'; return false; }
 }
 
@@ -191,7 +243,18 @@ async function submitOrder() {
   const pickupCode = document.getElementById('pickupCode').value.trim();
   if (!expressCode || !pickupCode) { showToast('请填写订单号和取货码', 'error'); return; }
   const incomingProducts = [];
-  document.querySelectorAll('#incomingProducts .product-line').forEach(l => { const sel = l.querySelector('select'); const q = parseInt(l.querySelector('input').value) || 0; if (q > 0) { const prod = products.find(p => p.id === sel.value); incomingProducts.push({ product_id: sel.value, name: prod ? prod.name : sel.value, quantity: q }); } });
+  document.querySelectorAll('#incomingProducts .product-line').forEach(l => {
+  const sel = l.querySelector('select');
+  const q = parseInt(l.querySelector('input').value) || 0;
+  if (sel.value && q > 0) {
+    const prod = products.find(p => p.id === sel.value);
+    incomingProducts.push({
+      product_id: sel.value,
+      name: prod ? prod.name : sel.value,
+      quantity: q
+    });
+  }
+});
   if (incomingProducts.length === 0) { showToast('请至少添加一个来件产品', 'error'); return; }
   const outgoing = [];
   for (const card of document.querySelectorAll('.recipient-card')) {
@@ -199,7 +262,18 @@ async function submitOrder() {
     const address = card.querySelector('.r-address').value.trim(); const notes = card.querySelector('.r-notes').value.trim();
     if (!name || !phone || !address) { showToast('请填写所有收件人的姓名、电话和地址', 'error'); return; }
     const rp = [];
-    card.querySelectorAll('.r-products .product-line').forEach(l => { const sel = l.querySelector('select'); const q = parseInt(l.querySelector('input').value) || 0; if (q > 0) { const prod = products.find(p => p.id === sel.value); rp.push({ product_id: sel.value, name: prod ? prod.name : sel.value, quantity: q }); } });
+    card.querySelectorAll('.r-products .product-line').forEach(l => {
+  const sel = l.querySelector('select');
+  const q = parseInt(l.querySelector('input').value) || 0;
+  if (sel.value && q > 0) {
+    const prod = products.find(p => p.id === sel.value);
+    rp.push({
+      product_id: sel.value,
+      name: prod ? prod.name : sel.value,
+      quantity: q
+    });
+  }
+});
     if (rp.length === 0) { showToast(`收件人 ${name} 至少需要一个产品`, 'error'); return; }
     outgoing.push({ name, phone, address, products: rp, notes });
   }
