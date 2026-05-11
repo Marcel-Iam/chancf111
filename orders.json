@@ -50,7 +50,7 @@
           {
             "product_id": "沛泉Reserve",
             "name": "沛泉 Reserve",
-            "quantity": 1
+            "quantity": 9
           }
         ]
       },
@@ -61,7 +61,7 @@
           {
             "product_id": "敏动力Mind",
             "name": "敏动力 Mind",
-            "quantity": 1
+            "quantity": 9
           }
         ]
       }
@@ -75,12 +75,38 @@
           {
             "product_id": "沛泉Reserve",
             "name": "沛泉 Reserve",
-            "quantity": 1
+            "quantity": 3
           },
           {
             "product_id": "敏动力Mind",
             "name": "敏动力 Mind",
-            "quantity": 1
+            "quantity": 6
+          }
+        ],
+        "notes": ""
+      },
+      {
+        "name": "还是我自己",
+        "phone": "13",
+        "address": "香港",
+        "products": [
+          {
+            "product_id": "沛泉Reserve",
+            "name": "沛泉 Reserve",
+            "quantity": 6
+          }
+        ],
+        "notes": ""
+      },
+      {
+        "name": "第三个人",
+        "phone": "4213",
+        "address": "台湾",
+        "products": [
+          {
+            "product_id": "敏动力Mind",
+            "name": "敏动力 Mind",
+            "quantity": 3
           }
         ],
         "notes": ""
