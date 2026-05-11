@@ -121,7 +121,7 @@
     "created_at": "2025-05-06T09:00:00.000Z",
     "status": "已完成",
     "picked_up": true,
-    "shipped": false,
+    "shipped": true,
     "incoming": {
       "express_code": "DD20250506002",
       "pickup_code": "3321",
