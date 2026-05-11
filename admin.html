@@ -7,153 +7,164 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600&display=swap');
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  :root {
-    --bg: #f5f0eb; --card: #ffffff; --border: #d4cdc4;
-    --text: #2c2825; --text-light: #7a7269;
-    --accent: #b8860b; --accent-hover: #9a7209;
-    --danger: #c0392b; --success: #27ae60; --input-bg: #faf8f5;
-  }
-  body { font-family: 'Noto Sans SC', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding: 20px; }
-  .container { max-width: 1100px; margin: 0 auto; }
-  h1 { font-weight: 500; font-size: 1.5rem; margin-bottom: 20px; color: var(--accent); }
-
-  .gate { display: flex; justify-content: center; align-items: center; min-height: 60vh; }
-  .gate-box { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 32px; text-align: center; width: 320px; }
-  .gate-box h2 { font-weight: 500; font-size: 1.1rem; margin-bottom: 16px; }
-  .gate-box input { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 4px; font-size: 0.9rem; margin-bottom: 12px; background: var(--input-bg); font-family: 'Noto Sans SC', sans-serif; }
-  .gate-box input:focus { outline: none; border-color: var(--accent); }
-
-  .tabs { display: flex; gap: 0; margin-bottom: 20px; border-bottom: 2px solid var(--border); flex-wrap: wrap; }
-  .tab { padding: 10px 14px; cursor: pointer; font-size: 0.82rem; font-weight: 500; color: var(--text-light); border-bottom: 2px solid transparent; margin-bottom: -2px; background: none; border-top: none; border-left: none; border-right: none; font-family: 'Noto Sans SC', sans-serif; transition: color 0.2s; white-space: nowrap; }
-  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
-  .tab:hover { color: var(--accent); }
-  .tab-content { display: none; }
-  .tab-content.active { display: block; }
-
-  .btn { font-family: 'Noto Sans SC', sans-serif; padding: 6px 14px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: 500; transition: background 0.2s; }
-  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-  .btn-accent { background: var(--accent); color: #fff; }
-  .btn-accent:hover:not(:disabled) { background: var(--accent-hover); }
-  .btn-danger { background: var(--danger); color: #fff; }
-  .btn-danger:hover:not(:disabled) { background: #a93226; }
-  .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-light); }
-  .btn-outline:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
-  .btn-success { background: var(--success); color: #fff; }
-  .btn-success:hover:not(:disabled) { background: #219a52; }
-
-  input, select, textarea {
-    font-family: 'Noto Sans SC', sans-serif; padding: 7px 10px; border: 1px solid var(--border);
-    border-radius: 4px; font-size: 0.85rem; background: var(--input-bg); color: var(--text);
-  }
-  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); }
-
-  .section { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-bottom: 16px; }
-  .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px; }
-  .toolbar-left { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-  .toolbar-right { display: flex; gap: 8px; align-items: center; }
-  .toolbar span { font-size: 0.8rem; color: var(--text-light); }
-
-  .data-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
-  .data-table th, .data-table td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--border); }
-  .data-table th { font-weight: 500; color: var(--text-light); font-size: 0.78rem; background: var(--input-bg); position: sticky; top: 0; }
-  .data-table td { vertical-align: top; }
-  .data-table tr:hover td { background: #faf8f5; }
-  .data-table input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; }
-  .table-wrap { overflow-x: auto; }
-  .qty-cell { text-align: center; font-variant-numeric: tabular-nums; }
-  .total-row td { font-weight: 600; background: var(--input-bg); border-top: 2px solid var(--border); }
-
-  .product-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
-  .product-row input { flex: 1; }
-  .empty-state { text-align: center; padding: 40px; color: var(--text-light); font-size: 0.9rem; }
-
-  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: none; justify-content: center; align-items: center; z-index: 900; }
-  .modal-overlay.active { display: flex; }
-  .modal { background: var(--card); border-radius: 8px; padding: 24px; width: 360px; max-width: 90vw; }
-  .modal h3 { font-weight: 500; font-size: 1rem; margin-bottom: 16px; }
-  .modal .form-group { margin-bottom: 12px; }
-  .modal .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
-
-  .history-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--border); }
-  .history-item:last-child { border-bottom: none; }
-  .history-info { display: flex; flex-direction: column; gap: 2px; }
-  .history-date { font-weight: 500; font-size: 0.9rem; }
-  .history-meta { font-size: 0.78rem; color: var(--text-light); }
-
-  .toast { position: fixed; top: 20px; right: 20px; padding: 12px 20px; border-radius: 6px; color: #fff; font-size: 0.9rem; z-index: 999; display: none; animation: slideIn 0.3s ease; }
-  .toast.success { background: var(--success); }
-  .toast.error { background: var(--danger); }
-  @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-  .loading-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.3); display: none; justify-content: center; align-items: center; z-index: 998; }
-  .loading-overlay.active { display: flex; }
-  .spinner { width: 40px; height: 40px; border: 3px solid #fff; border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  @media (max-width: 600px) { body { padding: 12px; } .section { padding: 14px; } .tab { padding: 8px 8px; font-size: 0.75rem; } }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  :root{--bg:#f5f0eb;--card:#ffffff;--border:#d4cdc4;--text:#2c2825;--text-light:#7a7269;--accent:#b8860b;--accent-hover:#9a7209;--danger:#c0392b;--success:#27ae60;--input-bg:#faf8f5;--warn-bg:#fff3cd;--warn-border:#e6c34d;--warn-text:#856404;}
+  body{font-family:'Noto Sans SC',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:20px;}
+  .container{max-width:1100px;margin:0 auto;}
+  h1{font-weight:500;font-size:1.5rem;margin-bottom:20px;color:var(--accent);}
+  .gate{display:flex;justify-content:center;align-items:center;min-height:60vh;}
+  .gate-box{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:32px;text-align:center;width:320px;}
+  .gate-box h2{font-weight:500;font-size:1.1rem;margin-bottom:16px;}
+  .gate-box input{width:100%;padding:10px;border:1px solid var(--border);border-radius:4px;font-size:0.9rem;margin-bottom:12px;background:var(--input-bg);font-family:'Noto Sans SC',sans-serif;}
+  .gate-box input:focus{outline:none;border-color:var(--accent);}
+  .tabs{display:flex;gap:0;margin-bottom:20px;border-bottom:2px solid var(--border);flex-wrap:wrap;}
+  .tab{padding:10px 14px;cursor:pointer;font-size:0.82rem;font-weight:500;color:var(--text-light);border-bottom:2px solid transparent;margin-bottom:-2px;background:none;border-top:none;border-left:none;border-right:none;font-family:'Noto Sans SC',sans-serif;transition:color 0.2s;white-space:nowrap;}
+  .tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+  .tab:hover{color:var(--accent);}
+  .tab-content{display:none;}
+  .tab-content.active{display:block;}
+  .sub-tabs{display:flex;gap:0;margin-bottom:16px;}
+  .sub-tab{padding:6px 16px;cursor:pointer;font-size:0.8rem;font-weight:500;color:var(--text-light);background:var(--card);border:1px solid var(--border);font-family:'Noto Sans SC',sans-serif;transition:all 0.2s;}
+  .sub-tab:first-child{border-radius:4px 0 0 4px;}
+  .sub-tab:last-child{border-radius:0 4px 4px 0;border-left:none;}
+  .sub-tab.active{color:#fff;background:var(--accent);border-color:var(--accent);}
+  .btn{font-family:'Noto Sans SC',sans-serif;padding:6px 14px;border:none;border-radius:4px;cursor:pointer;font-size:0.8rem;font-weight:500;transition:background 0.2s;}
+  .btn:disabled{opacity:0.5;cursor:not-allowed;}
+  .btn-accent{background:var(--accent);color:#fff;}
+  .btn-accent:hover:not(:disabled){background:var(--accent-hover);}
+  .btn-danger{background:var(--danger);color:#fff;}
+  .btn-danger:hover:not(:disabled){background:#a93226;}
+  .btn-outline{background:transparent;border:1px solid var(--border);color:var(--text-light);}
+  .btn-outline:hover:not(:disabled){border-color:var(--accent);color:var(--accent);}
+  .btn-success{background:var(--success);color:#fff;}
+  .btn-success:hover:not(:disabled){background:#219a52;}
+  .btn-sm{padding:3px 8px;font-size:0.75rem;}
+  input,select,textarea{font-family:'Noto Sans SC',sans-serif;padding:7px 10px;border:1px solid var(--border);border-radius:4px;font-size:0.85rem;background:var(--input-bg);color:var(--text);width:100%;max-width:100%;box-sizing:border-box;}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);}
+  textarea{resize:vertical;min-height:50px;}
+  .section{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:20px;margin-bottom:16px;}
+  .toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;}
+  .toolbar-left{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+  .toolbar-right{display:flex;gap:8px;align-items:center;}
+  .toolbar span{font-size:0.8rem;color:var(--text-light);}
+  .data-table{width:100%;border-collapse:collapse;font-size:0.82rem;}
+  .data-table th,.data-table td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--border);}
+  .data-table th{font-weight:500;color:var(--text-light);font-size:0.78rem;background:var(--input-bg);position:sticky;top:0;}
+  .data-table td{vertical-align:top;}
+  .data-table tr:hover td{background:#faf8f5;}
+  .data-table input[type="checkbox"]{width:16px;height:16px;cursor:pointer;}
+  .table-wrap{overflow-x:auto;}
+  .qty-cell{text-align:center;font-variant-numeric:tabular-nums;}
+  .total-row td{font-weight:600;background:var(--input-bg);border-top:2px solid var(--border);}
+  .product-row{display:flex;gap:8px;align-items:center;margin-bottom:8px;}
+  .product-row input{flex:1;}
+  .empty-state{text-align:center;padding:40px;color:var(--text-light);font-size:0.9rem;}
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);display:none;justify-content:center;align-items:center;z-index:900;padding:20px;}
+  .modal-overlay.active{display:flex;}
+  .modal{background:var(--card);border-radius:8px;padding:24px;width:360px;max-width:90vw;}
+  .modal h3{font-weight:500;font-size:1rem;margin-bottom:16px;}
+  .modal .form-group{margin-bottom:12px;}
+  .modal .modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;}
+  .edit-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);display:none;justify-content:center;align-items:flex-start;z-index:950;padding:20px;overflow-y:auto;}
+  .edit-overlay.active{display:flex;}
+  .edit-panel{background:var(--card);border-radius:8px;padding:24px;width:700px;max-width:95vw;margin:20px auto;}
+  .edit-panel h3{font-weight:500;font-size:1.1rem;margin-bottom:16px;color:var(--accent);}
+  .edit-section{border:1px solid var(--border);border-radius:6px;padding:16px;margin-bottom:16px;background:var(--input-bg);}
+  .edit-section-title{font-weight:500;font-size:0.9rem;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid var(--border);}
+  .form-row{display:flex;gap:12px;margin-bottom:12px;}
+  .form-group{flex:1;display:flex;flex-direction:column;min-width:0;}
+  .form-group label{font-size:0.8rem;color:var(--text-light);margin-bottom:4px;}
+  .e-product-line{display:flex;gap:8px;align-items:center;margin-bottom:8px;}
+  .e-product-line select{flex:3;min-width:0;}
+  .e-product-line input{flex:1;min-width:0;}
+  .e-product-line button{flex:0 0 auto;background:none;border:none;color:var(--danger);cursor:pointer;font-size:1.1rem;padding:4px 8px;}
+  .recipient-card{border:1px solid var(--border);border-radius:6px;padding:14px;margin-bottom:12px;background:#fff;}
+  .recipient-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+  .recipient-header span{font-weight:500;font-size:0.88rem;}
+  .add-btn{width:100%;padding:8px;border:2px dashed var(--border);background:transparent;border-radius:6px;color:var(--text-light);cursor:pointer;font-family:'Noto Sans SC',sans-serif;font-size:0.85rem;}
+  .add-btn:hover{border-color:var(--accent);color:var(--accent);}
+  .confirm-box{width:100%;max-width:400px;background:#fff;border-radius:10px;padding:22px;box-shadow:0 8px 30px rgba(0,0,0,0.18);}
+  .confirm-title{font-size:1.05rem;font-weight:600;margin-bottom:12px;color:var(--danger);}
+  .confirm-message{font-size:0.9rem;line-height:1.6;margin-bottom:18px;}
+  .confirm-actions{display:flex;gap:10px;}
+  .confirm-actions .btn{flex:1;padding:10px;}
+  .validation-box{padding:12px 16px;border-radius:6px;font-size:0.85rem;margin-bottom:12px;display:none;}
+  .validation-box.warn{display:block;background:var(--warn-bg);border:1px solid var(--warn-border);color:var(--warn-text);}
+  .history-item{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--border);}
+  .history-item:last-child{border-bottom:none;}
+  .history-info{display:flex;flex-direction:column;gap:2px;}
+  .history-date{font-weight:500;font-size:0.9rem;}
+  .history-meta{font-size:0.78rem;color:var(--text-light);}
+  .toast{position:fixed;top:20px;right:20px;padding:12px 20px;border-radius:6px;color:#fff;font-size:0.9rem;z-index:999;display:none;animation:slideIn 0.3s ease;}
+  .toast.success{background:var(--success);}.toast.error{background:var(--danger);}
+  @keyframes slideIn{from{transform:translateX(100%);opacity:0;}to{transform:translateX(0);opacity:1;}}
+  .loading-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.3);display:none;justify-content:center;align-items:center;z-index:998;}
+  .loading-overlay.active{display:flex;}
+  .spinner{width:40px;height:40px;border:3px solid #fff;border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  @media(max-width:700px){body{padding:12px;}.section{padding:14px;}.tab{padding:8px 8px;font-size:0.75rem;}.form-row{flex-direction:column;gap:8px;}.confirm-actions{flex-direction:column;}}
 </style>
 </head>
 <body>
-
-<div id="gateView" class="gate">
-  <div class="gate-box">
-    <h2>管理后台</h2>
-    <input type="password" id="pwdInput" placeholder="输入密码" onkeydown="if(event.key==='Enter')checkPwd()">
-    <button class="btn btn-accent" style="width:100%;padding:10px;" onclick="checkPwd()">进入</button>
-  </div>
-</div>
+<div id="gateView" class="gate"><div class="gate-box"><h2>管理后台</h2><input type="password" id="pwdInput" placeholder="输入密码" onkeydown="if(event.key==='Enter')checkPwd()"><button class="btn btn-accent" style="width:100%;padding:10px;" onclick="checkPwd()">进入</button></div></div>
 
 <div id="adminView" class="container" style="display:none;">
   <h1>管理后台</h1>
   <div class="tabs">
     <button class="tab active" onclick="switchTab('incoming')">来件管理</button>
     <button class="tab" onclick="switchTab('shipping')">寄件管理</button>
-    <button class="tab" onclick="switchTab('pickedup')">已取货</button>
-    <button class="tab" onclick="switchTab('shipped')">已寄出</button>
     <button class="tab" onclick="switchTab('history')">历史档案</button>
     <button class="tab" onclick="switchTab('products')">产品管理</button>
   </div>
 
+  <!-- 来件管理 -->
   <div id="tab-incoming" class="tab-content active">
-    <div class="toolbar">
+    <div class="sub-tabs">
+      <button class="sub-tab active" onclick="setIncomingView('active')">未取货 <span id="incActiveCount"></span></button>
+      <button class="sub-tab" onclick="setIncomingView('archived')">已取货 <span id="incArchivedCount"></span></button>
+    </div>
+    <div id="incActiveToolbar" class="toolbar">
       <div class="toolbar-left">
-        <button class="btn btn-accent" onclick="exportIncomingPDF()">导出 PDF</button>
-        <button class="btn btn-success" onclick="markPickedUp()">取货</button>
-        <span id="incomingCount"></span>
+        <button class="btn btn-accent" onclick="exportIncomingPDF()">生成取件单</button>
+        <button class="btn btn-success" onclick="markPickedUp()">已取货</button>
+        <button class="btn btn-outline" id="incEditBtn" onclick="toggleIncomingEdit()">编辑</button>
       </div>
+      <div class="toolbar-right"><button class="btn btn-outline" onclick="loadOrders()">刷新</button></div>
+    </div>
+    <div id="incArchivedToolbar" class="toolbar" style="display:none;">
+      <div class="toolbar-left"></div>
       <div class="toolbar-right"><button class="btn btn-outline" onclick="loadOrders()">刷新</button></div>
     </div>
     <div class="section"><div class="table-wrap" id="incomingTableWrap"></div></div>
   </div>
 
+  <!-- 寄件管理 -->
   <div id="tab-shipping" class="tab-content">
-    <div class="toolbar">
+    <div class="sub-tabs">
+      <button class="sub-tab active" onclick="setShippingView('active')">未寄出 <span id="shpActiveCount"></span></button>
+      <button class="sub-tab" onclick="setShippingView('archived')">已寄出 <span id="shpArchivedCount"></span></button>
+    </div>
+    <div id="shpActiveToolbar" class="toolbar">
       <div class="toolbar-left">
-        <button class="btn btn-accent" onclick="exportShippingPDF()">导出 PDF</button>
+        <button class="btn btn-accent" onclick="exportShippingPDF()">生成寄件单</button>
         <button class="btn btn-success" onclick="markShipped()">已寄出</button>
-        <span id="shippingCount"></span>
+        <button class="btn btn-outline" id="shpEditBtn" onclick="toggleShippingEdit()">编辑</button>
       </div>
+      <div class="toolbar-right"><button class="btn btn-outline" onclick="loadOrders()">刷新</button></div>
+    </div>
+    <div id="shpArchivedToolbar" class="toolbar" style="display:none;">
+      <div class="toolbar-left"></div>
       <div class="toolbar-right"><button class="btn btn-outline" onclick="loadOrders()">刷新</button></div>
     </div>
     <div class="section"><div class="table-wrap" id="shippingTableWrap"></div></div>
   </div>
 
-  <div id="tab-pickedup" class="tab-content">
-    <div class="toolbar">
-      <div class="toolbar-left"><span id="pickedupCount"></span></div>
-      <div class="toolbar-right"><button class="btn btn-outline" onclick="loadOrders()">刷新</button></div>
-    </div>
-    <div class="section"><div class="table-wrap" id="pickedupTableWrap"></div></div>
-  </div>
-
-  <div id="tab-shipped" class="tab-content">
-    <div class="toolbar">
-      <div class="toolbar-left"><span id="shippedCount"></span></div>
-      <div class="toolbar-right"><button class="btn btn-outline" onclick="loadOrders()">刷新</button></div>
-    </div>
-    <div class="section"><div class="table-wrap" id="shippedTableWrap"></div></div>
-  </div>
-
+  <!-- 历史档案 -->
   <div id="tab-history" class="tab-content">
+    <div class="sub-tabs">
+      <button class="sub-tab active" onclick="setHistoryView('pickup')">历史取货单</button>
+      <button class="sub-tab" onclick="setHistoryView('shipping')">历史寄件单</button>
+    </div>
     <div class="toolbar">
       <div class="toolbar-left"><span id="historyCount"></span></div>
       <div class="toolbar-right"><button class="btn btn-outline" onclick="loadHistory()">刷新</button></div>
@@ -161,6 +172,7 @@
     <div class="section"><div id="historyList"></div></div>
   </div>
 
+  <!-- 产品管理 -->
   <div id="tab-products" class="tab-content">
     <div class="section">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
@@ -173,16 +185,43 @@
   </div>
 </div>
 
-<div class="modal-overlay" id="exportModal">
-  <div class="modal">
-    <h3>导出来件提货单</h3>
-    <div class="form-group"><label>提货日期</label><input type="date" id="exportDate" style="width:100%;"></div>
-    <div class="form-group"><label>提货人</label><input type="text" id="exportPerson" placeholder="提货人姓名" style="width:100%;"></div>
-    <div class="modal-actions">
-      <button class="btn btn-outline" onclick="closeModal('exportModal')">取消</button>
-      <button class="btn btn-accent" onclick="doExportIncomingPDF()">导出</button>
+<!-- 导出来件提货单弹窗 -->
+<div class="modal-overlay" id="exportModal"><div class="modal"><h3>生成取件单</h3><div class="form-group"><label>提货日期</label><input type="date" id="exportDate"></div><div class="form-group"><label>提货人</label><input type="text" id="exportPerson" placeholder="提货人姓名"></div><div class="modal-actions"><button class="btn btn-outline" onclick="closeModal('exportModal')">取消</button><button class="btn btn-accent" onclick="doExportIncomingPDF()">生成</button></div></div></div>
+
+<!-- 删除确认弹窗 -->
+<div class="modal-overlay" id="deleteModal"><div class="confirm-box"><div class="confirm-title">确认删除</div><div id="deleteMessage" class="confirm-message"></div><div class="confirm-actions"><button class="btn btn-outline" onclick="closeModal('deleteModal')">取消</button><button class="btn btn-danger" onclick="doDeleteOrder()">删除</button></div></div></div>
+
+<!-- 数量不匹配确认弹窗 -->
+<div class="modal-overlay" id="qtyConfirmModal"><div class="confirm-box"><div class="confirm-title">产品数量不匹配</div><div id="qtyConfirmMessage" class="confirm-message"></div><div class="confirm-actions"><button class="btn btn-outline" onclick="closeModal('qtyConfirmModal')">取消</button><button class="btn btn-accent" onclick="confirmQtyMismatch()">仍然保存</button></div></div></div>
+
+<!-- 修改订单 overlay -->
+<div class="edit-overlay" id="editOverlay">
+<div class="edit-panel">
+  <h3>修改订单资料</h3>
+  <div class="edit-section">
+    <div class="edit-section-title">来件信息</div>
+    <div class="form-row">
+      <div class="form-group"><label>填表人称呼</label><input type="text" id="eCreatedBy" placeholder="例如：小陈"></div>
     </div>
+    <div class="form-row">
+      <div class="form-group"><label>订单号</label><input type="text" id="eExpressCode" placeholder="订单号"></div>
+      <div class="form-group"><label>取货码</label><input type="text" id="ePickupCode" placeholder="取货码"></div>
+    </div>
+    <label style="font-size:0.8rem;color:var(--text-light);margin-bottom:4px;display:block;">来件产品</label>
+    <div id="eIncomingProducts"></div>
+    <button class="btn btn-outline btn-sm" onclick="addEIncomingProduct()" style="margin-top:4px;">+ 添加产品</button>
   </div>
+  <div class="edit-section">
+    <div class="edit-section-title">收件人信息</div>
+    <div id="eRecipientList"></div>
+    <button class="add-btn" onclick="addERecipient()">+ 添加收件人</button>
+  </div>
+  <div id="eValidationBox" class="validation-box"></div>
+  <div style="display:flex;gap:10px;">
+    <button class="btn btn-accent" style="flex:1;padding:10px;" onclick="saveEditOrder()">保存修改</button>
+    <button class="btn btn-outline" style="flex:1;padding:10px;" onclick="closeEditOverlay()">取消</button>
+  </div>
+</div>
 </div>
 
 <div id="pdfRender" style="position:absolute;left:-9999px;top:0;width:800px;"></div>
@@ -190,405 +229,426 @@
 <div class="loading-overlay" id="loading"><div class="spinner"></div></div>
 
 <script>
-// ============================================================
-// 配置区域 (与 index.html 保持一致)
-// ============================================================
-const CONFIG = {
+const CONFIG={
   owner: 'Marcel-Iam',
   repo: 'chancf111',
   _k: '8.26.20.58.38.53.15.37.120.35.73.107.98.0.13.56.74.6.22.59.10.64.71.45.16.55.89.118.98.126.40.74.9.12.70.99.52.36.47.84',
-  password: '456456',
+    password:'456456'
 };
-
 function _d(s){var k='orderSysKey2025';return s.split('.').map(function(n,i){return String.fromCharCode(parseInt(n)^k.charCodeAt(i%k.length));}).join('');}
-const TOKEN = _d(CONFIG._k);
-const API = `https://api.github.com/repos/${CONFIG.owner}/${CONFIG.repo}/contents`;
-const HEADERS = { 'Content-Type': 'application/json', 'Authorization': `token ${TOKEN}` };
-const HISTORY_PICKUP = 'history_pickup';
-const HISTORY_SHIPPING = 'history_shipping';
-const TAB_NAMES = ['incoming','shipping','pickedup','shipped','history','products'];
+const TOKEN=_d(CONFIG._k);
+const API=`https://api.github.com/repos/${CONFIG.owner}/${CONFIG.repo}/contents`;
+const HEADERS={'Content-Type':'application/json','Authorization':`token ${TOKEN}`};
+const HISTORY_PICKUP='history_pickup',HISTORY_SHIPPING='history_shipping';
+const TAB_NAMES=['incoming','shipping','history','products'];
 
-let orders = [];
-let products = [];
-let pendingExportIds = [];
+let orders=[],products=[],pendingExportIds=[];
+let incView='active',shpView='active',histView='pickup';
+let incEditMode=false,shpEditMode=false;
+let editingOrder=null,deleteOrderId=null;
+let eRecipientCount=0;
 
-// ===== XSS 防护 =====
-function esc(v = '') {
-  return String(v).replace(/[&<>"']/g, c => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-  }[c]));
-}
+function esc(v=''){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function decodeB64(str){const bytes=Uint8Array.from(atob(str),c=>c.charCodeAt(0));return new TextDecoder().decode(bytes);}
+function encodeB64(str){return btoa(unescape(encodeURIComponent(str)));}
 
 // ===== Auth =====
-function checkPwd() {
-  if (document.getElementById('pwdInput').value === CONFIG.password) {
-    document.getElementById('gateView').style.display = 'none';
-    document.getElementById('adminView').style.display = 'block';
-    initAdmin();
-  } else { showToast('密码错误', 'error'); }
-}
-
-async function initAdmin() {
-  showLoading(true);
-  try { await loadOrders(); await loadProducts(); await loadHistory(); }
-  catch (e) { showToast('加载失败: ' + e.message, 'error'); }
-  showLoading(false);
-}
+function checkPwd(){if(document.getElementById('pwdInput').value===CONFIG.password){document.getElementById('gateView').style.display='none';document.getElementById('adminView').style.display='block';initAdmin();}else showToast('密码错误','error');}
+async function initAdmin(){showLoading(true);try{await loadProducts();await loadOrders();await loadHistory();}catch(e){showToast('加载失败: '+e.message,'error');}showLoading(false);}
 
 // ===== GitHub API =====
-function decodeB64(str) { const bytes = Uint8Array.from(atob(str), c => c.charCodeAt(0)); return new TextDecoder().decode(bytes); }
-function encodeB64(str) { return btoa(unescape(encodeURIComponent(str))); }
-
-async function fetchFileWithSha(path) {
-  const res = await fetch(`${API}/${path}`, { headers: HEADERS });
-  if (!res.ok) throw new Error('读取失败');
-  const data = await res.json();
-  return { content: JSON.parse(decodeB64(data.content)), sha: data.sha };
-}
-
-async function updateFile(path, content, sha, message) {
-  const res = await fetch(`${API}/${path}`, {
-    method: 'PUT', headers: HEADERS,
-    body: JSON.stringify({ content: encodeB64(JSON.stringify(content, null, 2)), sha, message }),
-  });
-  if (!res.ok) { const err = await res.json(); throw new Error(err.message || '写入失败'); }
-  return res.json();
-}
-
-async function createFile(path, base64Content, message) {
-  const res = await fetch(`${API}/${path}`, {
-    method: 'PUT', headers: HEADERS,
-    body: JSON.stringify({ content: base64Content, message }),
-  });
-  if (!res.ok) { const err = await res.json(); throw new Error(err.message || '创建失败'); }
-  return res.json();
-}
-
-async function updateWithRetry(path, mutator, message, maxRetries = 3) {
-  for (let i = 0; i < maxRetries; i++) {
-    try {
-      const { content, sha } = await fetchFileWithSha(path);
-      const updated = mutator(content);
-      const result = await updateFile(path, updated, sha, message);
-      return { content: updated, sha: result.content.sha };
-    } catch (e) { if (i === maxRetries - 1) throw e; await new Promise(r => setTimeout(r, 500 * (i + 1))); }
-  }
-}
+async function fetchFileWithSha(path){const res=await fetch(`${API}/${path}`,{headers:HEADERS});if(!res.ok)throw new Error('读取失败');const data=await res.json();return{content:JSON.parse(decodeB64(data.content)),sha:data.sha};}
+async function updateFile(path,content,sha,message){const res=await fetch(`${API}/${path}`,{method:'PUT',headers:HEADERS,body:JSON.stringify({content:encodeB64(JSON.stringify(content,null,2)),sha,message})});if(!res.ok){const err=await res.json();throw new Error(err.message||'写入失败');}return res.json();}
+async function createFileAPI(path,base64Content,message){const res=await fetch(`${API}/${path}`,{method:'PUT',headers:HEADERS,body:JSON.stringify({content:base64Content,message})});if(!res.ok){const err=await res.json();throw new Error(err.message||'创建失败');}return res.json();}
+async function updateWithRetry(path,mutator,message,maxRetries=3){for(let i=0;i<maxRetries;i++){try{const{content,sha}=await fetchFileWithSha(path);const updated=mutator(content);const result=await updateFile(path,updated,sha,message);return{content:updated,sha:result.content.sha};}catch(e){if(i===maxRetries-1)throw e;await new Promise(r=>setTimeout(r,500*(i+1)));}}}
 
 // ===== Orders =====
-async function loadOrders() {
-  const data = await fetchFileWithSha('orders.json');
-  orders = data.content;
-  orders.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-  renderIncoming(); renderShipping(); renderPickedup(); renderShipped();
+async function loadOrders(){const data=await fetchFileWithSha('orders.json');orders=data.content;orders.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));renderAll();}
+function renderAll(){renderIncoming();renderShipping();}
+function prodIdsIn(list){const s=new Set();list.forEach(o=>o.incoming.products.forEach(p=>s.add(p.product_id)));return[...s].sort();}
+function prodIdsOut(list){const s=new Set();list.forEach(o=>o.outgoing.forEach(r=>r.products.forEach(p=>s.add(p.product_id))));return[...s].sort();}
+function pn(id){const p=products.find(x=>x.id===id);return p?p.name:id;}
+function sel(g){return[...document.querySelectorAll(`input[data-group="${g}"]:checked`)].map(c=>c.value);}
+function togAll(g,v){document.querySelectorAll(`input[data-group="${g}"]`).forEach(c=>{c.checked=v;});}
+
+// ===== Sub-view toggles =====
+function setIncomingView(v){
+  incView=v;incEditMode=false;
+  document.getElementById('incEditBtn').textContent='编辑';
+  document.querySelectorAll('#tab-incoming .sub-tab').forEach((t,i)=>{t.classList.toggle('active',i===(v==='active'?0:1));});
+  document.getElementById('incActiveToolbar').style.display=v==='active'?'':'none';
+  document.getElementById('incArchivedToolbar').style.display=v==='archived'?'':'none';
+  renderIncoming();
 }
+function setShippingView(v){
+  shpView=v;shpEditMode=false;
+  document.getElementById('shpEditBtn').textContent='编辑';
+  document.querySelectorAll('#tab-shipping .sub-tab').forEach((t,i)=>{t.classList.toggle('active',i===(v==='active'?0:1));});
+  document.getElementById('shpActiveToolbar').style.display=v==='active'?'':'none';
+  document.getElementById('shpArchivedToolbar').style.display=v==='archived'?'':'none';
+  renderShipping();
+}
+function setHistoryView(v){
+  histView=v;
+  document.querySelectorAll('#tab-history .sub-tab').forEach((t,i)=>{t.classList.toggle('active',i===(v==='pickup'?0:1));});
+  renderHistoryList();
+}
+function toggleIncomingEdit(){incEditMode=!incEditMode;document.getElementById('incEditBtn').textContent=incEditMode?'完成':'编辑';renderIncoming();}
+function toggleShippingEdit(){shpEditMode=!shpEditMode;document.getElementById('shpEditBtn').textContent=shpEditMode?'完成':'编辑';renderShipping();}
 
-function prodIdsIn(list) { const s = new Set(); list.forEach(o => o.incoming.products.forEach(p => s.add(p.product_id))); return [...s].sort(); }
-function prodIdsOut(list) { const s = new Set(); list.forEach(o => o.outgoing.forEach(r => r.products.forEach(p => s.add(p.product_id)))); return [...s].sort(); }
-function pn(id) { const p = products.find(x => x.id === id); return p ? p.name : id; }
-function sel(g) { return [...document.querySelectorAll(`input[data-group="${g}"]:checked`)].map(c => c.value); }
-function togAll(g, v) { document.querySelectorAll(`input[data-group="${g}"]`).forEach(c => { c.checked = v; }); }
-
-// ----- 来件管理 -----
-function renderIncoming() {
-  const p = orders.filter(o => !o.picked_up);
-  document.getElementById('incomingCount').textContent = `${p.length} 个未取货订单`;
-  const w = document.getElementById('incomingTableWrap');
-  if (!p.length) { w.innerHTML = '<div class="empty-state">没有未取货订单</div>'; return; }
-  const pids = prodIdsIn(p); const tot = {}; pids.forEach(id => { tot[id] = 0; });
-  let h = '<table class="data-table"><thead><tr><th><input type="checkbox" onchange="togAll(\'incoming\',this.checked)"></th><th>填表人</th><th>订单号</th><th>取货码</th>';
-  pids.forEach(id => { h += `<th class="qty-cell">${esc(pn(id))}</th>`; });
-  h += '<th>日期</th></tr></thead><tbody>';
-  p.forEach(o => {
-    h += `<tr><td><input type="checkbox" data-group="incoming" value="${o.id}"></td><td>${esc(o.created_by || '')}</td><td>${esc(o.incoming.express_code)}</td><td>${esc(o.incoming.pickup_code)}</td>`;
-    pids.forEach(id => { const x = o.incoming.products.find(z => z.product_id === id); const q = x ? x.quantity : 0; tot[id] += q; h += `<td class="qty-cell">${q || ''}</td>`; });
-    h += `<td style="font-size:0.78rem;color:var(--text-light)">${new Date(o.created_at).toLocaleDateString('zh-CN')}</td></tr>`;
+// ===== Render Incoming =====
+function renderIncoming(){
+  const active=orders.filter(o=>!o.picked_up);
+  const archived=orders.filter(o=>o.picked_up);
+  document.getElementById('incActiveCount').textContent=`(${active.length})`;
+  document.getElementById('incArchivedCount').textContent=`(${archived.length})`;
+  const w=document.getElementById('incomingTableWrap');
+  const list=incView==='active'?active:archived;
+  if(!list.length){w.innerHTML=`<div class="empty-state">${incView==='active'?'没有未取货订单':'没有已取货订单'}</div>`;return;}
+  const isActive=incView==='active';
+  const editMode=isActive&&incEditMode;
+  const pids=prodIdsIn(list);const tot={};pids.forEach(id=>{tot[id]=0;});
+  let h='<table class="data-table"><thead><tr>';
+  if(isActive&&!editMode) h+='<th><input type="checkbox" onchange="togAll(\'incoming\',this.checked)"></th>';
+  h+='<th>填表人</th><th>订单号</th><th>取货码</th>';
+  pids.forEach(id=>{h+=`<th class="qty-cell">${esc(pn(id))}</th>`;});
+  h+='<th>日期</th>';
+  if(editMode) h+='<th>操作</th>';
+  h+='</tr></thead><tbody>';
+  list.forEach(o=>{
+    h+='<tr>';
+    if(isActive&&!editMode) h+=`<td><input type="checkbox" data-group="incoming" value="${o.id}"></td>`;
+    h+=`<td>${esc(o.created_by||'')}</td><td>${esc(o.incoming.express_code)}</td><td>${esc(o.incoming.pickup_code)}</td>`;
+    pids.forEach(id=>{const x=o.incoming.products.find(z=>z.product_id===id);const q=x?x.quantity:0;tot[id]+=q;h+=`<td class="qty-cell">${q||''}</td>`;});
+    h+=`<td style="font-size:0.78rem;color:var(--text-light)">${new Date(o.created_at).toLocaleDateString('zh-CN')}</td>`;
+    if(editMode) h+=`<td style="white-space:nowrap"><button class="btn btn-outline btn-sm" onclick="openEditOverlay('${o.id}')">修改</button> <button class="btn btn-danger btn-sm" onclick="confirmDelete('${o.id}')">删除</button></td>`;
+    h+='</tr>';
   });
-  h += '<tr class="total-row"><td></td><td colspan="3">合计</td>';
-  pids.forEach(id => { h += `<td class="qty-cell">${tot[id]}</td>`; });
-  h += '<td></td></tr></tbody></table>';
-  w.innerHTML = h;
+  const cspan=3;
+  h+=`<tr class="total-row">`;
+  if(isActive&&!editMode) h+='<td></td>';
+  h+=`<td colspan="${cspan-1}"></td><td>合计</td>`;
+  pids.forEach(id=>{h+=`<td class="qty-cell">${tot[id]}</td>`;});
+  h+='<td></td>';
+  if(editMode) h+='<td></td>';
+  h+='</tr></tbody></table>';
+  w.innerHTML=h;
 }
 
-// ----- 寄件管理 -----
-function renderShipping() {
-  const p = orders.filter(o => !o.shipped);
-  const tr = p.reduce((s, o) => s + o.outgoing.length, 0);
-  document.getElementById('shippingCount').textContent = `${p.length} 个未寄出订单, ${tr} 个收件人`;
-  const w = document.getElementById('shippingTableWrap');
-  if (!p.length) { w.innerHTML = '<div class="empty-state">没有未寄出订单</div>'; return; }
-  const pids = prodIdsOut(p); const tot = {}; pids.forEach(id => { tot[id] = 0; });
-  let h = '<table class="data-table"><thead><tr><th><input type="checkbox" onchange="togAll(\'shipping\',this.checked)"></th><th>填表人</th><th>订单号</th><th>收件人</th><th>地址</th><th>电话</th>';
-  pids.forEach(id => { h += `<th class="qty-cell">${esc(pn(id))}</th>`; });
-  h += '<th>备注</th></tr></thead><tbody>';
-  p.forEach(o => {
-    const rl = o.outgoing.length;
-    o.outgoing.forEach((r, ri) => {
-      h += '<tr>';
-      if (ri === 0) h += `<td rowspan="${rl}" style="vertical-align:middle"><input type="checkbox" data-group="shipping" value="${o.id}"></td><td rowspan="${rl}" style="vertical-align:middle">${esc(o.created_by || '')}</td><td rowspan="${rl}" style="vertical-align:middle">${esc(o.incoming.express_code)}</td>`;
-      h += `<td>${esc(r.name)}</td><td>${esc(r.address)}</td><td>${esc(r.phone)}</td>`;
-      pids.forEach(id => { const x = r.products.find(z => z.product_id === id); const q = x ? x.quantity : 0; tot[id] += q; h += `<td class="qty-cell">${q || ''}</td>`; });
-      h += `<td style="font-size:0.78rem">${esc(r.notes || '')}</td></tr>`;
+// ===== Render Shipping =====
+function renderShipping(){
+  const active=orders.filter(o=>!o.shipped);
+  const archived=orders.filter(o=>o.shipped);
+  document.getElementById('shpActiveCount').textContent=`(${active.length})`;
+  document.getElementById('shpArchivedCount').textContent=`(${archived.length})`;
+  const w=document.getElementById('shippingTableWrap');
+  const list=shpView==='active'?active:archived;
+  if(!list.length){w.innerHTML=`<div class="empty-state">${shpView==='active'?'没有未寄出订单':'没有已寄出订单'}</div>`;return;}
+  const isActive=shpView==='active';
+  const editMode=isActive&&shpEditMode;
+  const pids=prodIdsOut(list);const tot={};pids.forEach(id=>{tot[id]=0;});
+  let h='<table class="data-table"><thead><tr>';
+  if(isActive&&!editMode) h+='<th><input type="checkbox" onchange="togAll(\'shipping\',this.checked)"></th>';
+  h+='<th>填表人</th><th>订单号</th><th>收件人</th><th>地址</th><th>电话</th>';
+  pids.forEach(id=>{h+=`<th class="qty-cell">${esc(pn(id))}</th>`;});
+  h+='<th>备注</th>';
+  if(editMode) h+='<th>操作</th>';
+  h+='</tr></thead><tbody>';
+  list.forEach(o=>{
+    const rl=o.outgoing.length||1;
+    o.outgoing.forEach((r,ri)=>{
+      h+='<tr>';
+      if(ri===0){
+        if(isActive&&!editMode) h+=`<td rowspan="${rl}" style="vertical-align:middle"><input type="checkbox" data-group="shipping" value="${o.id}"></td>`;
+        h+=`<td rowspan="${rl}" style="vertical-align:middle">${esc(o.created_by||'')}</td><td rowspan="${rl}" style="vertical-align:middle">${esc(o.incoming.express_code)}</td>`;
+      }
+      h+=`<td>${esc(r.name)}</td><td>${esc(r.address)}</td><td>${esc(r.phone)}</td>`;
+      pids.forEach(id=>{const x=r.products.find(z=>z.product_id===id);const q=x?x.quantity:0;tot[id]+=q;h+=`<td class="qty-cell">${q||''}</td>`;});
+      h+=`<td style="font-size:0.78rem">${esc(r.notes||'')}</td>`;
+      if(editMode&&ri===0) h+=`<td rowspan="${rl}" style="vertical-align:middle;white-space:nowrap"><button class="btn btn-outline btn-sm" onclick="openEditOverlay('${o.id}')">修改</button> <button class="btn btn-danger btn-sm" onclick="confirmDelete('${o.id}')">删除</button></td>`;
+      h+='</tr>';
     });
+    if(!o.outgoing.length){
+      h+='<tr>';
+      if(isActive&&!editMode) h+=`<td><input type="checkbox" data-group="shipping" value="${o.id}"></td>`;
+      h+=`<td>${esc(o.created_by||'')}</td><td>${esc(o.incoming.express_code)}</td><td colspan="${3+pids.length+1}">无收件人</td>`;
+      if(editMode) h+=`<td style="white-space:nowrap"><button class="btn btn-outline btn-sm" onclick="openEditOverlay('${o.id}')">修改</button> <button class="btn btn-danger btn-sm" onclick="confirmDelete('${o.id}')">删除</button></td>`;
+      h+='</tr>';
+    }
   });
-  h += '<tr class="total-row"><td></td><td colspan="5">合计</td>';
-  pids.forEach(id => { h += `<td class="qty-cell">${tot[id]}</td>`; });
-  h += '<td></td></tr></tbody></table>';
-  w.innerHTML = h;
-}
-
-// ----- 已取货 -----
-function renderPickedup() {
-  const p = orders.filter(o => o.picked_up);
-  document.getElementById('pickedupCount').textContent = `${p.length} 个已取货订单`;
-  const w = document.getElementById('pickedupTableWrap');
-  if (!p.length) { w.innerHTML = '<div class="empty-state">没有已取货订单</div>'; return; }
-  const pids = prodIdsIn(p);
-  let h = '<table class="data-table"><thead><tr><th>填表人</th><th>订单号</th><th>取货码</th>';
-  pids.forEach(id => { h += `<th class="qty-cell">${esc(pn(id))}</th>`; });
-  h += '<th>日期</th></tr></thead><tbody>';
-  p.forEach(o => {
-    h += `<tr><td>${esc(o.created_by || '')}</td><td>${esc(o.incoming.express_code)}</td><td>${esc(o.incoming.pickup_code)}</td>`;
-    pids.forEach(id => { const x = o.incoming.products.find(z => z.product_id === id); h += `<td class="qty-cell">${x ? x.quantity : ''}</td>`; });
-    h += `<td style="font-size:0.78rem;color:var(--text-light)">${new Date(o.created_at).toLocaleDateString('zh-CN')}</td></tr>`;
-  });
-  h += '</tbody></table>'; w.innerHTML = h;
-}
-
-// ----- 已寄出 -----
-function renderShipped() {
-  const d = orders.filter(o => o.shipped);
-  document.getElementById('shippedCount').textContent = `${d.length} 个已寄出订单`;
-  const w = document.getElementById('shippedTableWrap');
-  if (!d.length) { w.innerHTML = '<div class="empty-state">没有已寄出订单</div>'; return; }
-  const pids = prodIdsOut(d);
-  let h = '<table class="data-table"><thead><tr><th>填表人</th><th>订单号</th><th>收件人</th><th>地址</th><th>电话</th>';
-  pids.forEach(id => { h += `<th class="qty-cell">${esc(pn(id))}</th>`; });
-  h += '<th>备注</th></tr></thead><tbody>';
-  d.forEach(o => {
-    const rl = o.outgoing.length;
-    o.outgoing.forEach((r, ri) => {
-      h += '<tr>';
-      if (ri === 0) h += `<td rowspan="${rl}" style="vertical-align:middle">${esc(o.created_by || '')}</td><td rowspan="${rl}" style="vertical-align:middle">${esc(o.incoming.express_code)}</td>`;
-      h += `<td>${esc(r.name)}</td><td>${esc(r.address)}</td><td>${esc(r.phone)}</td>`;
-      pids.forEach(id => { const x = r.products.find(z => z.product_id === id); h += `<td class="qty-cell">${x ? x.quantity : ''}</td>`; });
-      h += `<td style="font-size:0.78rem">${esc(r.notes || '')}</td></tr>`;
-    });
-  });
-  h += '</tbody></table>'; w.innerHTML = h;
+  const fixedCols=5;
+  h+='<tr class="total-row">';
+  if(isActive&&!editMode) h+='<td></td>';
+  h+=`<td colspan="${fixedCols-1}"></td><td>合计</td>`;
+  pids.forEach(id=>{h+=`<td class="qty-cell">${tot[id]}</td>`;});
+  h+='<td></td>';
+  if(editMode) h+='<td></td>';
+  h+='</tr></tbody></table>';
+  w.innerHTML=h;
 }
 
 // ===== Actions =====
-async function markPickedUp() {
-  const ids = sel('incoming');
-  if (!ids.length) { showToast('请先勾选要取货的订单', 'error'); return; }
-  if (!confirm(`确定将 ${ids.length} 个订单标记为已取货？`)) return;
+async function markPickedUp(){
+  const ids=sel('incoming');if(!ids.length){showToast('请先勾选要取货的订单','error');return;}
+  if(!confirm(`确定将 ${ids.length} 个订单标记为已取货？`))return;
   showLoading(true);
-  try {
-    const r = await updateWithRetry('orders.json', d => d.map(o => ids.includes(o.id) ? { ...o, picked_up: true } : o), `取货 ${ids.length} 个订单`);
-    orders = r.content; orders.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-    renderIncoming(); renderPickedup();
-    showToast(`${ids.length} 个订单已标记为已取货`, 'success');
-  } catch (e) { showToast('操作失败: ' + e.message, 'error'); }
+  try{const r=await updateWithRetry('orders.json',d=>d.map(o=>ids.includes(o.id)?{...o,picked_up:true}:o),`取货 ${ids.length} 个订单`);orders=r.content;orders.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));renderAll();showToast(`${ids.length} 个订单已标记为已取货`,'success');}catch(e){showToast('操作失败: '+e.message,'error');}
+  showLoading(false);
+}
+async function markShipped(){
+  const ids=sel('shipping');if(!ids.length){showToast('请先勾选要标记的订单','error');return;}
+  if(!confirm(`确定将 ${ids.length} 个订单标记为已寄出？`))return;
+  showLoading(true);
+  try{const r=await updateWithRetry('orders.json',d=>d.map(o=>ids.includes(o.id)?{...o,shipped:true}:o),`寄出 ${ids.length} 个订单`);orders=r.content;orders.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));renderAll();showToast(`${ids.length} 个订单已标记为已寄出`,'success');}catch(e){showToast('操作失败: '+e.message,'error');}
   showLoading(false);
 }
 
-async function markShipped() {
-  const ids = sel('shipping');
-  if (!ids.length) { showToast('请先勾选要标记的订单', 'error'); return; }
-  if (!confirm(`确定将 ${ids.length} 个订单标记为已寄出？`)) return;
+// ===== Delete =====
+function confirmDelete(id){
+  const o=orders.find(x=>x.id===id);if(!o)return;
+  deleteOrderId=id;
+  document.getElementById('deleteMessage').innerHTML=`确定要删除订单 <strong>${esc(o.incoming.express_code)}</strong> 吗？此操作无法撤销。`;
+  document.getElementById('deleteModal').classList.add('active');
+}
+async function doDeleteOrder(){
+  closeModal('deleteModal');if(!deleteOrderId)return;
   showLoading(true);
-  try {
-    const r = await updateWithRetry('orders.json', d => d.map(o => ids.includes(o.id) ? { ...o, shipped: true } : o), `寄出 ${ids.length} 个订单`);
-    orders = r.content; orders.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-    renderShipping(); renderShipped();
-    showToast(`${ids.length} 个订单已标记为已寄出`, 'success');
-  } catch (e) { showToast('操作失败: ' + e.message, 'error'); }
+  try{const r=await updateWithRetry('orders.json',d=>d.filter(o=>o.id!==deleteOrderId),`删除订单`);orders=r.content;orders.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));renderAll();showToast('订单已删除','success');}catch(e){showToast('删除失败: '+e.message,'error');}
+  deleteOrderId=null;showLoading(false);
+}
+
+// ===== Edit Overlay =====
+function productOpts(selectedId=''){return products.map(p=>{const sel=p.id===selectedId?'selected':'';return`<option value="${esc(p.id)}" ${sel}>${esc(p.name)}</option>`;}).join('');}
+
+function openEditOverlay(id){
+  const o=orders.find(x=>x.id===id);if(!o)return;
+  editingOrder=JSON.parse(JSON.stringify(o));
+  document.getElementById('eCreatedBy').value=o.created_by||'';
+  document.getElementById('eExpressCode').value=o.incoming.express_code||'';
+  document.getElementById('ePickupCode').value=o.incoming.pickup_code||'';
+  document.getElementById('eIncomingProducts').innerHTML='';
+  document.getElementById('eRecipientList').innerHTML='';
+  document.getElementById('eValidationBox').className='validation-box';
+  document.getElementById('eValidationBox').innerHTML='';
+  eRecipientCount=0;
+  const ip=o.incoming.products||[];
+  if(ip.length) ip.forEach(p=>addEIncomingProduct(p.product_id,p.quantity));
+  else addEIncomingProduct();
+  const out=o.outgoing||[];
+  if(out.length) out.forEach(r=>addERecipient(r));
+  else addERecipient();
+  document.getElementById('editOverlay').classList.add('active');
+}
+function closeEditOverlay(){editingOrder=null;document.getElementById('editOverlay').classList.remove('active');}
+
+function addEIncomingProduct(pid='',qty=''){
+  const c=document.getElementById('eIncomingProducts');const d=document.createElement('div');d.className='e-product-line';
+  d.innerHTML=`<select><option value="">请选择产品</option>${productOpts(pid)}</select><input type="number" min="1" value="${qty||''}" placeholder="数量" style="width:auto;flex:1;"><button onclick="this.parentElement.remove()">×</button>`;
+  c.appendChild(d);
+}
+function addERecipient(data=null){
+  eRecipientCount++;const n=eRecipientCount;const c=document.getElementById('eRecipientList');const d=document.createElement('div');
+  d.className='recipient-card';d.id=`ercp-${n}`;
+  d.innerHTML=`<div class="recipient-header"><span>收件人 #${n}</span><button class="btn btn-danger btn-sm" onclick="document.getElementById('ercp-${n}').remove()">删除</button></div>
+    <div class="form-row"><div class="form-group"><label>姓名</label><input type="text" class="r-name" value="${esc(data?.name||'')}"></div><div class="form-group"><label>电话</label><input type="text" class="r-phone" value="${esc(data?.phone||'')}"></div></div>
+    <div class="form-group" style="margin-bottom:12px;"><label>地址</label><input type="text" class="r-address" value="${esc(data?.address||'')}"></div>
+    <label style="font-size:0.8rem;color:var(--text-light);display:block;margin-bottom:4px;">产品</label><div class="r-products"></div>
+    <button class="btn btn-outline btn-sm" onclick="addERcpProduct(${n})" style="margin-top:4px;margin-bottom:8px;">+ 添加产品</button>
+    <div class="form-group"><label>备注</label><textarea class="r-notes">${esc(data?.notes||'')}</textarea></div>`;
+  c.appendChild(d);
+  if(data&&data.products&&data.products.length) data.products.forEach(p=>addERcpProduct(n,p.product_id,p.quantity));
+  else addERcpProduct(n);
+}
+function addERcpProduct(n,pid='',qty=''){
+  const card=document.getElementById(`ercp-${n}`);if(!card)return;
+  const c=card.querySelector('.r-products');const d=document.createElement('div');d.className='e-product-line';
+  d.innerHTML=`<select><option value="">请选择产品</option>${productOpts(pid)}</select><input type="number" min="1" value="${qty||''}" placeholder="数量" style="width:auto;flex:1;"><button onclick="this.parentElement.remove()">×</button>`;
+  c.appendChild(d);
+}
+
+function collectEditData(){
+  const createdBy=document.getElementById('eCreatedBy').value.trim();
+  const expressCode=document.getElementById('eExpressCode').value.trim();
+  const pickupCode=document.getElementById('ePickupCode').value.trim();
+  if(!createdBy){showToast('请填写填表人称呼','error');return null;}
+  if(!expressCode||!pickupCode){showToast('请填写订单号和取货码','error');return null;}
+  const incomingProducts=[];
+  document.querySelectorAll('#eIncomingProducts .e-product-line').forEach(l=>{
+    const s=l.querySelector('select');const q=parseInt(l.querySelector('input').value)||0;
+    if(s.value&&q>0){const prod=products.find(p=>p.id===s.value);incomingProducts.push({product_id:s.value,name:prod?prod.name:s.value,quantity:q});}
+  });
+  if(!incomingProducts.length){showToast('请至少添加一个来件产品','error');return null;}
+  const outgoing=[];
+  document.querySelectorAll('#eRecipientList .recipient-card').forEach(card=>{
+    const name=card.querySelector('.r-name').value.trim();
+    const phone=card.querySelector('.r-phone').value.trim();
+    const address=card.querySelector('.r-address').value.trim();
+    const notes=card.querySelector('.r-notes').value.trim();
+    const rp=[];
+    card.querySelectorAll('.r-products .e-product-line').forEach(l=>{
+      const s=l.querySelector('select');const q=parseInt(l.querySelector('input').value)||0;
+      if(s.value&&q>0){const prod=products.find(p=>p.id===s.value);rp.push({product_id:s.value,name:prod?prod.name:s.value,quantity:q});}
+    });
+    if(name||phone||address||rp.length||notes) outgoing.push({name,phone,address,products:rp,notes});
+  });
+  return{...editingOrder,created_by:createdBy,incoming:{express_code:expressCode,pickup_code:pickupCode,products:incomingProducts},outgoing};
+}
+
+function getEditQtyMismatches(){
+  const inc={},out={};
+  document.querySelectorAll('#eIncomingProducts .e-product-line').forEach(l=>{const id=l.querySelector('select').value;const q=parseInt(l.querySelector('input').value)||0;if(id&&q>0)inc[id]=(inc[id]||0)+q;});
+  document.querySelectorAll('#eRecipientList .r-products .e-product-line').forEach(l=>{const id=l.querySelector('select').value;const q=parseInt(l.querySelector('input').value)||0;if(id&&q>0)out[id]=(out[id]||0)+q;});
+  const all=new Set([...Object.keys(inc),...Object.keys(out)]);const mm=[];
+  for(const id of all){const i=inc[id]||0;const o=out[id]||0;if(i!==o)mm.push(`${pn(id)}: 来件 ${i}, 收件合计 ${o}`);}
+  return mm;
+}
+
+async function saveEditOrder(force=false){
+  const updated=collectEditData();if(!updated)return;
+  if(!force){
+    const mm=getEditQtyMismatches();
+    if(mm.length){
+      document.getElementById('eValidationBox').className='validation-box warn';
+      document.getElementById('eValidationBox').innerHTML='<strong>产品数量不匹配：</strong><br>'+mm.map(m=>esc(m)).join('<br>');
+      document.getElementById('qtyConfirmMessage').innerHTML=mm.map(m=>esc(m)).join('<br>')+'<br><br>是否仍然保存？';
+      document.getElementById('qtyConfirmModal').classList.add('active');return;
+    }
+  }
+  showLoading(true);
+  try{
+    await updateWithRetry('orders.json',d=>d.map(o=>o.id===editingOrder.id?updated:o),`修改订单 ${updated.incoming.express_code}`);
+    const data=await fetchFileWithSha('orders.json');orders=data.content;orders.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+    closeEditOverlay();renderAll();showToast('订单修改成功','success');
+  }catch(e){showToast('修改失败: '+e.message,'error');}
   showLoading(false);
 }
+function confirmQtyMismatch(){closeModal('qtyConfirmModal');saveEditOrder(true);}
 
 // ===== Export Incoming PDF =====
-function exportIncomingPDF() {
-  const ids = sel('incoming');
-  if (!ids.length) { showToast('请先勾选要导出的订单', 'error'); return; }
-  pendingExportIds = ids;
-  document.getElementById('exportDate').value = new Date().toISOString().split('T')[0];
-  document.getElementById('exportPerson').value = '';
+function exportIncomingPDF(){
+  const ids=sel('incoming');if(!ids.length){showToast('请先勾选要导出的订单','error');return;}
+  pendingExportIds=ids;document.getElementById('exportDate').value=new Date().toISOString().split('T')[0];document.getElementById('exportPerson').value='';
   document.getElementById('exportModal').classList.add('active');
 }
-
-function closeModal(id) { document.getElementById(id).classList.remove('active'); }
-
-async function doExportIncomingPDF() {
-  const pickupDate = document.getElementById('exportDate').value;
-  const pickupPerson = document.getElementById('exportPerson').value.trim();
-  if (!pickupDate || !pickupPerson) { showToast('请填写提货日期和提货人', 'error'); return; }
-  closeModal('exportModal'); showLoading(true);
-  try {
-    const selected = orders.filter(o => pendingExportIds.includes(o.id));
-    const pids = prodIdsIn(selected); const tot = {}; pids.forEach(id => { tot[id] = 0; });
-    const S = 'border:1px solid #555;padding:5px 8px;background:#eee;';
-    let rows = '';
-    selected.forEach(o => {
-      rows += `<tr><td>${esc(o.created_by || '')}</td><td>${esc(o.incoming.express_code)}</td><td>${esc(o.incoming.pickup_code)}</td>`;
-      pids.forEach(id => { const x = o.incoming.products.find(z => z.product_id === id); const q = x ? x.quantity : 0; tot[id] += q; rows += `<td style="text-align:center">${q || ''}</td>`; });
-      rows += '</tr>';
-    });
-    rows += '<tr style="font-weight:bold;border-top:2px solid #333"><td colspan="3" style="text-align:right">合计</td>';
-    pids.forEach(id => { rows += `<td style="text-align:center">${tot[id]}</td>`; }); rows += '</tr>';
-    const ph = pids.map(id => `<th style="text-align:center;${S}">${esc(pn(id))}</th>`).join('');
-    const html = `<div style="font-family:'Noto Sans SC','Microsoft YaHei',sans-serif;padding:30px;color:#222;">
-      <h2 style="text-align:center;margin-bottom:8px;font-size:18px;">来件提货单</h2>
-      <div style="margin-bottom:16px;font-size:13px;"><span style="margin-right:40px;">提货日期: ${esc(pickupDate)}</span><span>提货人: ${esc(pickupPerson)}</span></div>
-      <table style="width:100%;border-collapse:collapse;font-size:12px;"><thead><tr><th style="${S}">填表人</th><th style="${S}">订单号</th><th style="${S}">取货码</th>${ph}</tr></thead>
-      <tbody>${rows.replace(/<td/g, '<td style="border:1px solid #555;padding:5px 8px;"')}</tbody></table></div>`;
-    const blob = await genPdf(html);
-    const fn = `pickup_${ts()}.pdf`;
-    await uploadPdf(HISTORY_PICKUP, fn, blob, `提货单 ${pickupDate} ${pickupPerson}`, { type:'pickup', pickup_date:pickupDate, person:pickupPerson, order_count:selected.length });
-    showToast('提货单 PDF 已生成并保存', 'success'); await loadHistory();
-  } catch (e) { showToast('导出失败: ' + e.message, 'error'); console.error(e); }
+async function doExportIncomingPDF(){
+  const pickupDate=document.getElementById('exportDate').value;const pickupPerson=document.getElementById('exportPerson').value.trim();
+  if(!pickupDate||!pickupPerson){showToast('请填写提货日期和提货人','error');return;}
+  closeModal('exportModal');showLoading(true);
+  try{
+    const selected=orders.filter(o=>pendingExportIds.includes(o.id));const pids=prodIdsIn(selected);const tot={};pids.forEach(id=>{tot[id]=0;});
+    const S='border:1px solid #555;padding:5px 8px;background:#eee;';
+    let rows='';selected.forEach(o=>{rows+=`<tr><td>${esc(o.created_by||'')}</td><td>${esc(o.incoming.express_code)}</td><td>${esc(o.incoming.pickup_code)}</td>`;pids.forEach(id=>{const x=o.incoming.products.find(z=>z.product_id===id);const q=x?x.quantity:0;tot[id]+=q;rows+=`<td style="text-align:center">${q||''}</td>`;});rows+='</tr>';});
+    rows+='<tr style="font-weight:bold;border-top:2px solid #333"><td colspan="3" style="text-align:right">合计</td>';pids.forEach(id=>{rows+=`<td style="text-align:center">${tot[id]}</td>`;});rows+='</tr>';
+    const ph=pids.map(id=>`<th style="text-align:center;${S}">${esc(pn(id))}</th>`).join('');
+    const html=`<div style="font-family:'Noto Sans SC','Microsoft YaHei',sans-serif;padding:30px;color:#222;"><h2 style="text-align:center;margin-bottom:8px;font-size:18px;">来件提货单</h2><div style="margin-bottom:16px;font-size:13px;"><span style="margin-right:40px;">提货日期: ${esc(pickupDate)}</span><span>提货人: ${esc(pickupPerson)}</span></div><table style="width:100%;border-collapse:collapse;font-size:12px;"><thead><tr><th style="${S}">填表人</th><th style="${S}">订单号</th><th style="${S}">取货码</th>${ph}</tr></thead><tbody>${rows.replace(/<td/g,'<td style="border:1px solid #555;padding:5px 8px;"')}</tbody></table></div>`;
+    const blob=await genPdf(html);
+    const pdfUrl=URL.createObjectURL(blob);window.open(pdfUrl,'_blank');
+    const fn=`pickup_${ts()}.pdf`;
+    await uploadPdf(HISTORY_PICKUP,fn,blob,`提货单 ${pickupDate} ${pickupPerson}`,{type:'pickup',pickup_date:pickupDate,person:pickupPerson,order_count:selected.length});
+    showToast('取件单已生成并保存','success');await loadHistory();
+  }catch(e){showToast('生成失败: '+e.message,'error');console.error(e);}
   showLoading(false);
 }
 
-// ===== Export Shipping PDF =====
-async function exportShippingPDF() {
-  const ids = sel('shipping');
-  if (!ids.length) { showToast('请先勾选要导出的订单', 'error'); return; }
+// ===== Export Shipping PDF (no 填表人, no 订单号) =====
+async function exportShippingPDF(){
+  const ids=sel('shipping');if(!ids.length){showToast('请先勾选要导出的订单','error');return;}
   showLoading(true);
-  try {
-    const selected = orders.filter(o => ids.includes(o.id));
-    const pids = prodIdsOut(selected); const tot = {}; pids.forEach(id => { tot[id] = 0; });
-    const S = 'border:1px solid #555;padding:5px 8px;background:#eee;';
-    let rows = '';
-    selected.forEach(o => {
-      const rl = o.outgoing.length;
-      o.outgoing.forEach((r, ri) => {
-        rows += '<tr>';
-        if (ri === 0) rows += `<td rowspan="${rl}" style="vertical-align:top">${esc(o.created_by || '')}</td><td rowspan="${rl}" style="vertical-align:top">${esc(o.incoming.express_code)}</td>`;
-        rows += `<td>${esc(r.name)}</td><td>${esc(r.address)}</td><td>${esc(r.phone)}</td>`;
-        pids.forEach(id => { const x = r.products.find(z => z.product_id === id); const q = x ? x.quantity : 0; tot[id] += q; rows += `<td style="text-align:center">${q || ''}</td>`; });
-        rows += `<td style="font-size:11px">${esc(r.notes || '')}</td></tr>`;
-      });
-    });
-    rows += '<tr style="font-weight:bold;border-top:2px solid #333"><td colspan="5" style="text-align:right">合计</td>';
-    pids.forEach(id => { rows += `<td style="text-align:center">${tot[id]}</td>`; }); rows += '<td></td></tr>';
-    const ph = pids.map(id => `<th style="text-align:center;${S}">${esc(pn(id))}</th>`).join('');
-    const today = new Date().toISOString().split('T')[0];
-    const html = `<div style="font-family:'Noto Sans SC','Microsoft YaHei',sans-serif;padding:30px;color:#222;">
-      <h2 style="text-align:center;margin-bottom:8px;font-size:18px;">寄件单</h2>
-      <div style="margin-bottom:16px;font-size:13px;">日期: ${today}</div>
-      <table style="width:100%;border-collapse:collapse;font-size:11px;"><thead><tr><th style="${S}">填表人</th><th style="${S}">订单号</th><th style="${S}">收件人</th><th style="${S}">地址</th><th style="${S}">电话</th>${ph}<th style="${S}">备注</th></tr></thead>
-      <tbody>${rows.replace(/<td/g, '<td style="border:1px solid #555;padding:5px 8px;"')}</tbody></table></div>`;
-    const blob = await genPdf(html, 'landscape');
-    const fn = `shipping_${ts()}.pdf`;
-    const rc = selected.reduce((s, o) => s + o.outgoing.length, 0);
-    await uploadPdf(HISTORY_SHIPPING, fn, blob, `寄件单 ${today}`, { type:'shipping', date:today, order_count:selected.length, recipient_count:rc });
-    showToast('寄件单 PDF 已生成并保存', 'success'); await loadHistory();
-  } catch (e) { showToast('导出失败: ' + e.message, 'error'); console.error(e); }
+  try{
+    const selected=orders.filter(o=>ids.includes(o.id));const pids=prodIdsOut(selected);const tot={};pids.forEach(id=>{tot[id]=0;});
+    const S='border:1px solid #555;padding:5px 8px;background:#eee;';
+    let rows='';
+    selected.forEach(o=>{o.outgoing.forEach(r=>{
+      rows+='<tr>';
+      rows+=`<td>${esc(r.name)}</td><td>${esc(r.address)}</td><td>${esc(r.phone)}</td>`;
+      pids.forEach(id=>{const x=r.products.find(z=>z.product_id===id);const q=x?x.quantity:0;tot[id]+=q;rows+=`<td style="text-align:center">${q||''}</td>`;});
+      rows+=`<td style="font-size:11px">${esc(r.notes||'')}</td></tr>`;
+    });});
+    rows+='<tr style="font-weight:bold;border-top:2px solid #333"><td colspan="3" style="text-align:right">合计</td>';
+    pids.forEach(id=>{rows+=`<td style="text-align:center">${tot[id]}</td>`;});rows+='<td></td></tr>';
+    const ph=pids.map(id=>`<th style="text-align:center;${S}">${esc(pn(id))}</th>`).join('');
+    const today=new Date().toISOString().split('T')[0];
+    const html=`<div style="font-family:'Noto Sans SC','Microsoft YaHei',sans-serif;padding:30px;color:#222;"><h2 style="text-align:center;margin-bottom:8px;font-size:18px;">寄件单</h2><div style="margin-bottom:16px;font-size:13px;">日期: ${today}</div><table style="width:100%;border-collapse:collapse;font-size:11px;"><thead><tr><th style="${S}">收件人</th><th style="${S}">地址</th><th style="${S}">电话</th>${ph}<th style="${S}">备注</th></tr></thead><tbody>${rows.replace(/<td/g,'<td style="border:1px solid #555;padding:5px 8px;"')}</tbody></table></div>`;
+    const blob=await genPdf(html,'landscape');
+    const pdfUrl=URL.createObjectURL(blob);window.open(pdfUrl,'_blank');
+    const fn=`shipping_${ts()}.pdf`;const rc=selected.reduce((s,o)=>s+o.outgoing.length,0);
+    await uploadPdf(HISTORY_SHIPPING,fn,blob,`寄件单 ${today}`,{type:'shipping',date:today,order_count:selected.length,recipient_count:rc});
+    showToast('寄件单已生成并保存','success');await loadHistory();
+  }catch(e){showToast('生成失败: '+e.message,'error');console.error(e);}
   showLoading(false);
 }
 
 // ===== PDF Helpers =====
-function ts() { const n=new Date(); return n.getFullYear()+String(n.getMonth()+1).padStart(2,'0')+String(n.getDate()).padStart(2,'0')+'_'+String(n.getHours()).padStart(2,'0')+String(n.getMinutes()).padStart(2,'0')+String(n.getSeconds()).padStart(2,'0'); }
-
-async function genPdf(html, orient='portrait') {
-  const rd=document.getElementById('pdfRender'); rd.innerHTML=html;
-  const blob=await html2pdf().set({ margin:10, image:{type:'jpeg',quality:0.95}, html2canvas:{scale:2,useCORS:true}, jsPDF:{unit:'mm',format:'a4',orientation:orient} }).from(rd.firstElementChild).outputPdf('blob');
-  rd.innerHTML=''; return blob;
-}
-
-function b2b64(blob) { return new Promise((res,rej)=>{ const r=new FileReader(); r.onloadend=()=>res(r.result.split(',')[1]); r.onerror=rej; r.readAsDataURL(blob); }); }
-
-async function uploadPdf(folder, filename, blob, commitMsg, meta) {
-  const b64 = await b2b64(blob);
-  await createFile(`${folder}/${filename}`, b64, commitMsg);
-  const ip = `${folder}/index.json`;
-  let idx=[], sha=null;
-  try { const res=await fetch(`${API}/${ip}`,{headers:HEADERS}); if(res.ok){const d=await res.json(); idx=JSON.parse(decodeB64(d.content)); sha=d.sha;} } catch(e){}
-  idx.push({ filename, ...meta, created_at:new Date().toISOString() });
-  const enc = encodeB64(JSON.stringify(idx, null, 2));
-  const body = { content:enc, message:'更新索引' };
-  if (sha) body.sha = sha;
-  await fetch(`${API}/${ip}`, { method:'PUT', headers:HEADERS, body:JSON.stringify(body) });
+function ts(){const n=new Date();return n.getFullYear()+String(n.getMonth()+1).padStart(2,'0')+String(n.getDate()).padStart(2,'0')+'_'+String(n.getHours()).padStart(2,'0')+String(n.getMinutes()).padStart(2,'0')+String(n.getSeconds()).padStart(2,'0');}
+async function genPdf(html,orient='portrait'){const rd=document.getElementById('pdfRender');rd.innerHTML=html;const blob=await html2pdf().set({margin:10,image:{type:'jpeg',quality:0.95},html2canvas:{scale:2,useCORS:true},jsPDF:{unit:'mm',format:'a4',orientation:orient}}).from(rd.firstElementChild).outputPdf('blob');rd.innerHTML='';return blob;}
+function b2b64(blob){return new Promise((res,rej)=>{const r=new FileReader();r.onloadend=()=>res(r.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(blob);});}
+async function uploadPdf(folder,filename,blob,commitMsg,meta){
+  const b64=await b2b64(blob);await createFileAPI(`${folder}/${filename}`,b64,commitMsg);
+  const ip=`${folder}/index.json`;let idx=[],sha=null;
+  try{const res=await fetch(`${API}/${ip}`,{headers:HEADERS});if(res.ok){const d=await res.json();idx=JSON.parse(decodeB64(d.content));sha=d.sha;}}catch(e){}
+  idx.push({filename,...meta,created_at:new Date().toISOString()});
+  const enc=encodeB64(JSON.stringify(idx,null,2));const body={content:enc,message:'更新索引'};if(sha)body.sha=sha;
+  await fetch(`${API}/${ip}`,{method:'PUT',headers:HEADERS,body:JSON.stringify(body)});
 }
 
 // ===== History =====
-async function loadHistory() {
-  const c=document.getElementById('historyList'); let all=[];
-  for (const f of [HISTORY_PICKUP, HISTORY_SHIPPING]) {
-    try { const res=await fetch(`${API}/${f}/index.json`,{headers:HEADERS}); if(res.ok){const d=await res.json(); const data=JSON.parse(decodeB64(d.content)); data.forEach(e=>{e._folder=f;}); all=all.concat(data);} } catch(e){}
+let historyData=[];
+async function loadHistory(){
+  historyData=[];
+  for(const f of[HISTORY_PICKUP,HISTORY_SHIPPING]){
+    try{const res=await fetch(`${API}/${f}/index.json`,{headers:HEADERS});if(res.ok){const d=await res.json();const data=JSON.parse(decodeB64(d.content));data.forEach(e=>{e._folder=f;});historyData=historyData.concat(data);}}catch(e){}
   }
-  document.getElementById('historyCount').textContent=`${all.length} 个历史档案`;
-  if(!all.length){c.innerHTML='<div class="empty-state">没有历史档案</div>';return;}
-  all.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
-  c.innerHTML=all.map(e=>{
+  historyData.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+  renderHistoryList();
+}
+function renderHistoryList(){
+  const c=document.getElementById('historyList');
+  const filtered=historyData.filter(e=>histView==='pickup'?e.type==='pickup':e.type==='shipping');
+  document.getElementById('historyCount').textContent=`${filtered.length} 个档案`;
+  if(!filtered.length){c.innerHTML='<div class="empty-state">没有历史档案</div>';return;}
+  c.innerHTML=filtered.map(e=>{
     const t=new Date(e.created_at).toLocaleString('zh-CN');
     const isP=e.type==='pickup';
     const lbl=isP?'提货单':'寄件单';
     const det=isP?`${esc(e.pickup_date)} | ${esc(e.person)} | ${e.order_count} 个订单`:`${esc(e.date)} | ${e.order_count} 个订单, ${e.recipient_count} 个收件人`;
-    return `<div class="history-item"><div class="history-info"><span class="history-date">${esc(lbl)} - ${det}</span><span class="history-meta">生成时间: ${esc(t)}</span></div><button class="btn btn-outline" onclick="viewPdf('${e._folder}','${e.filename}')">检视</button></div>`;
+    return`<div class="history-item"><div class="history-info"><span class="history-date">${esc(lbl)} - ${det}</span><span class="history-meta">生成时间: ${esc(t)}</span></div><button class="btn btn-outline" onclick="viewPdf('${e._folder}','${e.filename}')">检视</button></div>`;
   }).join('');
 }
-
-async function viewPdf(folder, filename) {
+async function viewPdf(folder,filename){
   showLoading(true);
-  try {
-    const res=await fetch(`${API}/${folder}/${filename}`,{headers:HEADERS});
-    if(!res.ok) throw new Error('文件读取失败');
-    const data=await res.json();
-    const bin=atob(data.content); const bytes=new Uint8Array(bin.length);
-    for(let i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i);
-    const blob=new Blob([bytes],{type:'application/pdf'});
-    window.open(URL.createObjectURL(blob),'_blank');
-  } catch(e){showToast('无法打开: '+e.message,'error');}
-  showLoading(false);
+  try{const res=await fetch(`${API}/${folder}/${filename}`,{headers:HEADERS});if(!res.ok)throw new Error('文件读取失败');const data=await res.json();const bin=atob(data.content);const bytes=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);const blob=new Blob([bytes],{type:'application/pdf'});window.open(URL.createObjectURL(blob),'_blank');}
+  catch(e){showToast('无法打开: '+e.message,'error');}showLoading(false);
 }
 
 // ===== Products =====
-async function loadProducts() { const d=await fetchFileWithSha('products.json'); products=d.content; renderProducts(); }
-
-function syncProductsFromDOM() {
-  const rows = document.querySelectorAll('#productList .product-row');
-  if (!rows.length) return;
-  const synced = [];
-  for (const row of rows) {
-    const idEl = row.querySelector('[data-field="id"]');
-    if (!idEl) continue;
-    const id = idEl.value;
-    const name = row.querySelector('[data-field="name"]').value;
-    synced.push({ id, name });
-  }
-  products = synced;
+async function loadProducts(){const d=await fetchFileWithSha('products.json');products=d.content;renderProducts();}
+function syncProductsFromDOM(){const rows=document.querySelectorAll('#productList .product-row');const synced=[];for(const row of rows){const idEl=row.querySelector('[data-field="id"]');if(!idEl)continue;synced.push({id:idEl.value,name:row.querySelector('[data-field="name"]').value});}products=synced;}
+function renderProducts(){
+  const header='<div class="product-row" style="margin-bottom:4px;"><span style="flex:1;font-size:0.78rem;color:var(--text-light);padding-left:2px;">简称 (ID)</span><span style="flex:1;font-size:0.78rem;color:var(--text-light);padding-left:2px;">全称</span><span style="width:52px;"></span></div>';
+  document.getElementById('productList').innerHTML=header+products.map((p,i)=>`<div class="product-row"><input type="text" value="${esc(p.id)}" data-idx="${i}" data-field="id" placeholder="产品ID"><input type="text" value="${esc(p.name)}" data-idx="${i}" data-field="name" placeholder="产品名称"><button class="btn btn-danger" onclick="removeProduct(${i})">删除</button></div>`).join('');
 }
-
-function renderProducts() {
-  const header = '<div class="product-row" style="margin-bottom:4px;"><span style="flex:1;font-size:0.78rem;color:var(--text-light);padding-left:2px;">简称 (ID)</span><span style="flex:1;font-size:0.78rem;color:var(--text-light);padding-left:2px;">全称</span><span style="width:52px;"></span></div>';
-  document.getElementById('productList').innerHTML = header + products.map((p,i)=>`<div class="product-row"><input type="text" value="${esc(p.id)}" data-idx="${i}" data-field="id" placeholder="产品ID"><input type="text" value="${esc(p.name)}" data-idx="${i}" data-field="name" placeholder="产品名称"><button class="btn btn-danger" onclick="removeProduct(${i})">删除</button></div>`).join('');
-}
-function addProductRow() { syncProductsFromDOM(); products.push({id:'p'+String(products.length+1).padStart(3,'0'),name:''}); renderProducts(); const inp=document.querySelectorAll('#productList input[data-field="name"]'); if(inp.length) inp[inp.length-1].focus(); }
-function removeProduct(i) { syncProductsFromDOM(); products.splice(i,1); renderProducts(); }
-async function saveProducts() {
-  const rows=document.querySelectorAll('#productList .product-row'); const upd=[];
-  for(const row of rows){ const idEl=row.querySelector('[data-field="id"]'); if(!idEl) continue; const id=idEl.value.trim(); const nm=row.querySelector('[data-field="name"]').value.trim(); if(id&&nm) upd.push({id,name:nm}); }
+function addProductRow(){syncProductsFromDOM();products.push({id:'p'+String(products.length+1).padStart(3,'0'),name:''});renderProducts();const inp=document.querySelectorAll('#productList input[data-field="name"]');if(inp.length)inp[inp.length-1].focus();}
+function removeProduct(i){syncProductsFromDOM();products.splice(i,1);renderProducts();}
+async function saveProducts(){
+  const rows=document.querySelectorAll('#productList .product-row');const upd=[];
+  for(const row of rows){const idEl=row.querySelector('[data-field="id"]');if(!idEl)continue;const id=idEl.value.trim();const nm=row.querySelector('[data-field="name"]').value.trim();if(id&&nm)upd.push({id,name:nm});}
   if(!upd.length){showToast('至少保留一个产品','error');return;}
   showLoading(true);
-  try{ const r=await updateWithRetry('products.json',()=>upd,'更新产品列表'); products=r.content; renderProducts(); showToast('产品列表已保存','success'); }
-  catch(e){showToast('保存失败: '+e.message,'error');}
+  try{const r=await updateWithRetry('products.json',()=>upd,'更新产品列表');products=r.content;renderProducts();showToast('产品列表已保存','success');}catch(e){showToast('保存失败: '+e.message,'error');}
   showLoading(false);
 }
 
 // ===== Tabs =====
-function switchTab(name) {
+function switchTab(name){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
   document.getElementById(`tab-${name}`).classList.add('active');
-  const i=TAB_NAMES.indexOf(name); if(i>=0) document.querySelectorAll('.tab')[i].classList.add('active');
-  if(name==='history') loadHistory();
+  const i=TAB_NAMES.indexOf(name);if(i>=0)document.querySelectorAll('.tab')[i].classList.add('active');
+  if(name==='history')loadHistory();
 }
-
-// ===== UI =====
-function showToast(msg,type){ const t=document.getElementById('toast'); t.textContent=msg; t.className='toast '+type; t.style.display='block'; setTimeout(()=>{t.style.display='none';},3500); }
-function showLoading(on){ document.getElementById('loading').classList.toggle('active',on); }
+function closeModal(id){document.getElementById(id).classList.remove('active');}
+function showToast(msg,type){const t=document.getElementById('toast');t.textContent=msg;t.className='toast '+type;t.style.display='block';setTimeout(()=>{t.style.display='none';},3500);}
+function showLoading(on){document.getElementById('loading').classList.toggle('active',on);}
 </script>
 </body>
 </html>
