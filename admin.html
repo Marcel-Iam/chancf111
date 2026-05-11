@@ -132,7 +132,7 @@
       <div class="toolbar-right"><button class="btn btn-outline" onclick="loadOrders()">刷新</button></div>
     </div>
     <div id="incArchivedToolbar" class="toolbar" style="display:none;">
-      <div class="toolbar-left"></div>
+      <div class="toolbar-left"><button class="btn btn-outline" id="incArchEditBtn" onclick="toggleIncomingEdit()">编辑</button></div>
       <div class="toolbar-right"><button class="btn btn-outline" onclick="loadOrders()">刷新</button></div>
     </div>
     <div class="section"><div class="table-wrap" id="incomingTableWrap"></div></div>
@@ -153,7 +153,7 @@
       <div class="toolbar-right"><button class="btn btn-outline" onclick="loadOrders()">刷新</button></div>
     </div>
     <div id="shpArchivedToolbar" class="toolbar" style="display:none;">
-      <div class="toolbar-left"></div>
+      <div class="toolbar-left"><button class="btn btn-outline" id="shpArchEditBtn" onclick="toggleShippingEdit()">编辑</button></div>
       <div class="toolbar-right"><button class="btn btn-outline" onclick="loadOrders()">刷新</button></div>
     </div>
     <div class="section"><div class="table-wrap" id="shippingTableWrap"></div></div>
@@ -229,12 +229,9 @@
 <div class="loading-overlay" id="loading"><div class="spinner"></div></div>
 
 <script>
-const CONFIG={
-  owner: 'Marcel-Iam',
+const CONFIG={  owner: 'Marcel-Iam',
   repo: 'chancf111',
-  _k: '8.26.20.58.38.53.15.37.120.35.73.107.98.0.13.56.74.6.22.59.10.64.71.45.16.55.89.118.98.126.40.74.9.12.70.99.52.36.47.84',
-    password:'456456'
-};
+  _k: '8.26.20.58.38.53.15.37.120.35.73.107.98.0.13.56.74.6.22.59.10.64.71.45.16.55.89.118.98.126.40.74.9.12.70.99.52.36.47.84',password:'456456'};
 function _d(s){var k='orderSysKey2025';return s.split('.').map(function(n,i){return String.fromCharCode(parseInt(n)^k.charCodeAt(i%k.length));}).join('');}
 const TOKEN=_d(CONFIG._k);
 const API=`https://api.github.com/repos/${CONFIG.owner}/${CONFIG.repo}/contents`;
@@ -275,6 +272,7 @@ function togAll(g,v){document.querySelectorAll(`input[data-group="${g}"]`).forEa
 function setIncomingView(v){
   incView=v;incEditMode=false;
   document.getElementById('incEditBtn').textContent='编辑';
+  document.getElementById('incArchEditBtn').textContent='编辑';
   document.querySelectorAll('#tab-incoming .sub-tab').forEach((t,i)=>{t.classList.toggle('active',i===(v==='active'?0:1));});
   document.getElementById('incActiveToolbar').style.display=v==='active'?'':'none';
   document.getElementById('incArchivedToolbar').style.display=v==='archived'?'':'none';
@@ -283,6 +281,7 @@ function setIncomingView(v){
 function setShippingView(v){
   shpView=v;shpEditMode=false;
   document.getElementById('shpEditBtn').textContent='编辑';
+  document.getElementById('shpArchEditBtn').textContent='编辑';
   document.querySelectorAll('#tab-shipping .sub-tab').forEach((t,i)=>{t.classList.toggle('active',i===(v==='active'?0:1));});
   document.getElementById('shpActiveToolbar').style.display=v==='active'?'':'none';
   document.getElementById('shpArchivedToolbar').style.display=v==='archived'?'':'none';
@@ -293,8 +292,8 @@ function setHistoryView(v){
   document.querySelectorAll('#tab-history .sub-tab').forEach((t,i)=>{t.classList.toggle('active',i===(v==='pickup'?0:1));});
   renderHistoryList();
 }
-function toggleIncomingEdit(){incEditMode=!incEditMode;document.getElementById('incEditBtn').textContent=incEditMode?'完成':'编辑';renderIncoming();}
-function toggleShippingEdit(){shpEditMode=!shpEditMode;document.getElementById('shpEditBtn').textContent=shpEditMode?'完成':'编辑';renderShipping();}
+function toggleIncomingEdit(){incEditMode=!incEditMode;const lbl=incEditMode?'完成':'编辑';document.getElementById(incView==='active'?'incEditBtn':'incArchEditBtn').textContent=lbl;renderIncoming();}
+function toggleShippingEdit(){shpEditMode=!shpEditMode;const lbl=shpEditMode?'完成':'编辑';document.getElementById(shpView==='active'?'shpEditBtn':'shpArchEditBtn').textContent=lbl;renderShipping();}
 
 // ===== Render Incoming =====
 function renderIncoming(){
@@ -303,10 +302,10 @@ function renderIncoming(){
   document.getElementById('incActiveCount').textContent=`(${active.length})`;
   document.getElementById('incArchivedCount').textContent=`(${archived.length})`;
   const w=document.getElementById('incomingTableWrap');
-  const list=incView==='active'?active:archived;
-  if(!list.length){w.innerHTML=`<div class="empty-state">${incView==='active'?'没有未取货订单':'没有已取货订单'}</div>`;return;}
   const isActive=incView==='active';
-  const editMode=isActive&&incEditMode;
+  const list=isActive?active:archived;
+  if(!list.length){w.innerHTML=`<div class="empty-state">${isActive?'没有未取货订单':'没有已取货订单'}</div>`;return;}
+  const editMode=incEditMode;
   const pids=prodIdsIn(list);const tot={};pids.forEach(id=>{tot[id]=0;});
   let h='<table class="data-table"><thead><tr>';
   if(isActive&&!editMode) h+='<th><input type="checkbox" onchange="togAll(\'incoming\',this.checked)"></th>';
@@ -321,17 +320,21 @@ function renderIncoming(){
     h+=`<td>${esc(o.created_by||'')}</td><td>${esc(o.incoming.express_code)}</td><td>${esc(o.incoming.pickup_code)}</td>`;
     pids.forEach(id=>{const x=o.incoming.products.find(z=>z.product_id===id);const q=x?x.quantity:0;tot[id]+=q;h+=`<td class="qty-cell">${q||''}</td>`;});
     h+=`<td style="font-size:0.78rem;color:var(--text-light)">${new Date(o.created_at).toLocaleDateString('zh-CN')}</td>`;
-    if(editMode) h+=`<td style="white-space:nowrap"><button class="btn btn-outline btn-sm" onclick="openEditOverlay('${o.id}')">修改</button> <button class="btn btn-danger btn-sm" onclick="confirmDelete('${o.id}')">删除</button></td>`;
+    if(editMode&&isActive) h+=`<td style="white-space:nowrap"><button class="btn btn-outline btn-sm" onclick="openEditOverlay('${o.id}')">修改</button> <button class="btn btn-danger btn-sm" onclick="confirmDelete('${o.id}')">删除</button></td>`;
+    if(editMode&&!isActive) h+=`<td style="white-space:nowrap"><button class="btn btn-outline btn-sm" onclick="openEditOverlay('${o.id}')">修改</button> <button class="btn btn-outline btn-sm" onclick="markUnpicked('${o.id}')">未取货</button></td>`;
     h+='</tr>';
   });
-  const cspan=3;
-  h+=`<tr class="total-row">`;
-  if(isActive&&!editMode) h+='<td></td>';
-  h+=`<td colspan="${cspan-1}"></td><td>合计</td>`;
-  pids.forEach(id=>{h+=`<td class="qty-cell">${tot[id]}</td>`;});
-  h+='<td></td>';
-  if(editMode) h+='<td></td>';
-  h+='</tr></tbody></table>';
+  if(isActive){
+    const cspan=3;
+    h+='<tr class="total-row">';
+    if(!editMode) h+='<td></td>';
+    h+=`<td colspan="${cspan-1}"></td><td>合计</td>`;
+    pids.forEach(id=>{h+=`<td class="qty-cell">${tot[id]}</td>`;});
+    h+='<td></td>';
+    if(editMode) h+='<td></td>';
+    h+='</tr>';
+  }
+  h+='</tbody></table>';
   w.innerHTML=h;
 }
 
@@ -342,10 +345,10 @@ function renderShipping(){
   document.getElementById('shpActiveCount').textContent=`(${active.length})`;
   document.getElementById('shpArchivedCount').textContent=`(${archived.length})`;
   const w=document.getElementById('shippingTableWrap');
-  const list=shpView==='active'?active:archived;
-  if(!list.length){w.innerHTML=`<div class="empty-state">${shpView==='active'?'没有未寄出订单':'没有已寄出订单'}</div>`;return;}
   const isActive=shpView==='active';
-  const editMode=isActive&&shpEditMode;
+  const list=isActive?active:archived;
+  if(!list.length){w.innerHTML=`<div class="empty-state">${isActive?'没有未寄出订单':'没有已寄出订单'}</div>`;return;}
+  const editMode=shpEditMode;
   const pids=prodIdsOut(list);const tot={};pids.forEach(id=>{tot[id]=0;});
   let h='<table class="data-table"><thead><tr>';
   if(isActive&&!editMode) h+='<th><input type="checkbox" onchange="togAll(\'shipping\',this.checked)"></th>';
@@ -356,6 +359,9 @@ function renderShipping(){
   h+='</tr></thead><tbody>';
   list.forEach(o=>{
     const rl=o.outgoing.length||1;
+    let actionHtml='';
+    if(editMode&&isActive) actionHtml=`<button class="btn btn-outline btn-sm" onclick="openEditOverlay('${o.id}')">修改</button> <button class="btn btn-danger btn-sm" onclick="confirmDelete('${o.id}')">删除</button>`;
+    if(editMode&&!isActive) actionHtml=`<button class="btn btn-outline btn-sm" onclick="openEditOverlay('${o.id}')">修改</button> <button class="btn btn-outline btn-sm" onclick="markUnshipped('${o.id}')">未寄出</button>`;
     o.outgoing.forEach((r,ri)=>{
       h+='<tr>';
       if(ri===0){
@@ -365,25 +371,28 @@ function renderShipping(){
       h+=`<td>${esc(r.name)}</td><td>${esc(r.address)}</td><td>${esc(r.phone)}</td>`;
       pids.forEach(id=>{const x=r.products.find(z=>z.product_id===id);const q=x?x.quantity:0;tot[id]+=q;h+=`<td class="qty-cell">${q||''}</td>`;});
       h+=`<td style="font-size:0.78rem">${esc(r.notes||'')}</td>`;
-      if(editMode&&ri===0) h+=`<td rowspan="${rl}" style="vertical-align:middle;white-space:nowrap"><button class="btn btn-outline btn-sm" onclick="openEditOverlay('${o.id}')">修改</button> <button class="btn btn-danger btn-sm" onclick="confirmDelete('${o.id}')">删除</button></td>`;
+      if(editMode&&ri===0) h+=`<td rowspan="${rl}" style="vertical-align:middle;white-space:nowrap">${actionHtml}</td>`;
       h+='</tr>';
     });
     if(!o.outgoing.length){
       h+='<tr>';
       if(isActive&&!editMode) h+=`<td><input type="checkbox" data-group="shipping" value="${o.id}"></td>`;
       h+=`<td>${esc(o.created_by||'')}</td><td>${esc(o.incoming.express_code)}</td><td colspan="${3+pids.length+1}">无收件人</td>`;
-      if(editMode) h+=`<td style="white-space:nowrap"><button class="btn btn-outline btn-sm" onclick="openEditOverlay('${o.id}')">修改</button> <button class="btn btn-danger btn-sm" onclick="confirmDelete('${o.id}')">删除</button></td>`;
+      if(editMode) h+=`<td style="white-space:nowrap">${actionHtml}</td>`;
       h+='</tr>';
     }
   });
-  const fixedCols=5;
-  h+='<tr class="total-row">';
-  if(isActive&&!editMode) h+='<td></td>';
-  h+=`<td colspan="${fixedCols-1}"></td><td>合计</td>`;
-  pids.forEach(id=>{h+=`<td class="qty-cell">${tot[id]}</td>`;});
-  h+='<td></td>';
-  if(editMode) h+='<td></td>';
-  h+='</tr></tbody></table>';
+  if(isActive){
+    const fixedCols=5;
+    h+='<tr class="total-row">';
+    if(!editMode) h+='<td></td>';
+    h+=`<td colspan="${fixedCols-1}"></td><td>合计</td>`;
+    pids.forEach(id=>{h+=`<td class="qty-cell">${tot[id]}</td>`;});
+    h+='<td></td>';
+    if(editMode) h+='<td></td>';
+    h+='</tr>';
+  }
+  h+='</tbody></table>';
   w.innerHTML=h;
 }
 
@@ -400,6 +409,18 @@ async function markShipped(){
   if(!confirm(`确定将 ${ids.length} 个订单标记为已寄出？`))return;
   showLoading(true);
   try{const r=await updateWithRetry('orders.json',d=>d.map(o=>ids.includes(o.id)?{...o,shipped:true}:o),`寄出 ${ids.length} 个订单`);orders=r.content;orders.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));renderAll();showToast(`${ids.length} 个订单已标记为已寄出`,'success');}catch(e){showToast('操作失败: '+e.message,'error');}
+  showLoading(false);
+}
+async function markUnpicked(id){
+  if(!confirm('确定将此订单改回未取货状态？'))return;
+  showLoading(true);
+  try{const r=await updateWithRetry('orders.json',d=>d.map(o=>o.id===id?{...o,picked_up:false}:o),'撤销取货');orders=r.content;orders.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));renderAll();showToast('已改回未取货','success');}catch(e){showToast('操作失败: '+e.message,'error');}
+  showLoading(false);
+}
+async function markUnshipped(id){
+  if(!confirm('确定将此订单改回未寄出状态？'))return;
+  showLoading(true);
+  try{const r=await updateWithRetry('orders.json',d=>d.map(o=>o.id===id?{...o,shipped:false}:o),'撤销寄出');orders=r.content;orders.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));renderAll();showToast('已改回未寄出','success');}catch(e){showToast('操作失败: '+e.message,'error');}
   showLoading(false);
 }
 
