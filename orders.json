@@ -174,13 +174,13 @@
       "pickup_code": "54321",
       "products": [
         {
-          "product_id": "Mind",
-          "name": "敏动力Mind",
+          "product_id": "沛泉Reserve",
+          "name": "沛泉 Reserve",
           "quantity": 5
         },
         {
-          "product_id": "Reserve",
-          "name": "沛泉Reserve",
+          "product_id": "敏动力Mind",
+          "name": "敏动力 Mind",
           "quantity": 5
         }
       ]
@@ -192,13 +192,13 @@
         "address": "rewnjin",
         "products": [
           {
-            "product_id": "Reserve",
-            "name": "沛泉Reserve",
+            "product_id": "沛泉Reserve",
+            "name": "沛泉 Reserve",
             "quantity": 5
           },
           {
-            "product_id": "Mind",
-            "name": "敏动力Mind",
+            "product_id": "敏动力Mind",
+            "name": "敏动力 Mind",
             "quantity": 2
           }
         ],
@@ -210,8 +210,8 @@
         "address": "buzhidao",
         "products": [
           {
-            "product_id": "Mind",
-            "name": "敏动力Mind",
+            "product_id": "敏动力Mind",
+            "name": "敏动力 Mind",
             "quantity": 3
           }
         ],
