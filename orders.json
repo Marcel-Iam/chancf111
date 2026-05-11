@@ -34,5 +34,57 @@
         "notes": ""
       }
     ]
+  },
+  {
+    "id": "ORD_1778498940347_egoa",
+    "created_at": "2026-05-11T11:29:00.347Z",
+    "created_by": "任",
+    "status": "待处理",
+    "picked_up": false,
+    "shipped": false,
+    "incoming": [
+      {
+        "express_code": "177322",
+        "pickup_code": "100",
+        "products": [
+          {
+            "product_id": "沛泉Reserve",
+            "name": "沛泉 Reserve",
+            "quantity": 1
+          }
+        ]
+      },
+      {
+        "express_code": "177323",
+        "pickup_code": "100",
+        "products": [
+          {
+            "product_id": "敏动力Mind",
+            "name": "敏动力 Mind",
+            "quantity": 1
+          }
+        ]
+      }
+    ],
+    "outgoing": [
+      {
+        "name": "我自己",
+        "phone": "128",
+        "address": "澳门",
+        "products": [
+          {
+            "product_id": "沛泉Reserve",
+            "name": "沛泉 Reserve",
+            "quantity": 1
+          },
+          {
+            "product_id": "敏动力Mind",
+            "name": "敏动力 Mind",
+            "quantity": 1
+          }
+        ],
+        "notes": ""
+      }
+    ]
   }
 ]
