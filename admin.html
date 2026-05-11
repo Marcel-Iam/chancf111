@@ -121,7 +121,7 @@
   <div id="tab-incoming" class="tab-content active">
     <div class="sub-tabs">
       <button class="sub-tab active" onclick="setIncomingView('active')">未取货 <span id="incActiveCount"></span></button>
-      <button class="sub-tab" onclick="setIncomingView('archived')">已取货 <span id="incArchivedCount"></span></button>
+      <button class="sub-tab" onclick="setIncomingView('archived')">已取货 </button>
     </div>
     <div id="incActiveToolbar" class="toolbar">
       <div class="toolbar-left">
@@ -142,7 +142,7 @@
   <div id="tab-shipping" class="tab-content">
     <div class="sub-tabs">
       <button class="sub-tab active" onclick="setShippingView('active')">未寄出 <span id="shpActiveCount"></span></button>
-      <button class="sub-tab" onclick="setShippingView('archived')">已寄出 <span id="shpArchivedCount"></span></button>
+      <button class="sub-tab" onclick="setShippingView('archived')">已寄出 </button>
     </div>
     <div id="shpActiveToolbar" class="toolbar">
       <div class="toolbar-left">
@@ -300,7 +300,6 @@ function renderIncoming(){
   const active=orders.filter(o=>!o.picked_up);
   const archived=orders.filter(o=>o.picked_up);
   document.getElementById('incActiveCount').textContent=`(${active.length})`;
-  document.getElementById('incArchivedCount').textContent=`(${archived.length})`;
   const w=document.getElementById('incomingTableWrap');
   const isActive=incView==='active';
   const list=isActive?active:archived;
@@ -343,7 +342,6 @@ function renderShipping(){
   const active=orders.filter(o=>!o.shipped);
   const archived=orders.filter(o=>o.shipped);
   document.getElementById('shpActiveCount').textContent=`(${active.length})`;
-  document.getElementById('shpArchivedCount').textContent=`(${archived.length})`;
   const w=document.getElementById('shippingTableWrap');
   const isActive=shpView==='active';
   const list=isActive?active:archived;
