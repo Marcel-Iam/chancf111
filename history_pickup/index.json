@@ -1,13 +1,5 @@
 [
   {
-    "filename": "pickup_20260510_072001.pdf",
-    "type": "pickup",
-    "pickup_date": "2026-05-10",
-    "person": "阿强",
-    "order_count": 2,
-    "created_at": "2026-05-10T12:20:03.671Z"
-  },
-  {
     "filename": "pickup_20260510_224323.pdf",
     "type": "pickup",
     "pickup_date": "2026-05-10",
