@@ -1,1 +1,38 @@
-[]
+[
+  {
+    "id": "ORD_1778498702358_byvi",
+    "created_at": "2026-05-11T11:25:02.358Z",
+    "created_by": "sunny",
+    "status": "待处理",
+    "picked_up": false,
+    "shipped": false,
+    "incoming": [
+      {
+        "express_code": "635127",
+        "pickup_code": "078699",
+        "products": [
+          {
+            "product_id": "敏动力Mind",
+            "name": "敏动力 Mind",
+            "quantity": 6
+          }
+        ]
+      }
+    ],
+    "outgoing": [
+      {
+        "name": "丁女士",
+        "phone": "18626116314",
+        "address": "广东省潮州市潮安区 泰安路10号401室(财富中心A座旁)",
+        "products": [
+          {
+            "product_id": "敏动力Mind",
+            "name": "敏动力 Mind",
+            "quantity": 6
+          }
+        ],
+        "notes": ""
+      }
+    ]
+  }
+]
