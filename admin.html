@@ -97,6 +97,9 @@
   .history-meta{font-size:0.78rem;color:var(--text-light);}
   .toast{position:fixed;top:20px;right:20px;padding:12px 20px;border-radius:6px;color:#fff;font-size:0.9rem;z-index:999;display:none;animation:slideIn 0.3s ease;}
   .toast.success{background:var(--success);}.toast.error{background:var(--danger);}
+  .incoming-block{border:1px solid var(--border);border-radius:6px;padding:12px;margin-bottom:10px;background:#fff;}
+  .incoming-block-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+  .incoming-block-header span{font-weight:500;font-size:0.85rem;}
   @keyframes slideIn{from{transform:translateX(100%);opacity:0;}to{transform:translateX(0);opacity:1;}}
   .loading-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.3);display:none;justify-content:center;align-items:center;z-index:998;}
   .loading-overlay.active{display:flex;}
@@ -207,17 +210,15 @@
 <div class="edit-panel">
   <h3>修改订单资料</h3>
   <div class="edit-section">
-    <div class="edit-section-title">来件信息</div>
+    <div class="edit-section-title">基本信息</div>
     <div class="form-row">
       <div class="form-group"><label>填表人称呼</label><input type="text" id="eCreatedBy" placeholder="例如：小陈"></div>
     </div>
-    <div class="form-row">
-      <div class="form-group"><label>订单号</label><input type="text" id="eExpressCode" placeholder="订单号"></div>
-      <div class="form-group"><label>取货码</label><input type="text" id="ePickupCode" placeholder="取货码"></div>
-    </div>
-    <label style="font-size:0.8rem;color:var(--text-light);margin-bottom:4px;display:block;">来件产品</label>
-    <div id="eIncomingProducts"></div>
-    <button class="btn btn-outline btn-sm" onclick="addEIncomingProduct()" style="margin-top:4px;">+ 添加产品</button>
+  </div>
+  <div class="edit-section">
+    <div class="edit-section-title">来件信息</div>
+    <div id="eIncomingList"></div>
+    <button class="add-btn" onclick="addEIncomingBlock()" style="margin-top:4px;">+ 添加来件单</button>
   </div>
   <div class="edit-section">
     <div class="edit-section-title">收件人信息</div>
@@ -253,7 +254,7 @@ let orders=[],products=[],pendingExportIds=[];
 let incView='active',shpView='active',histView='pickup';
 let incEditMode=false,shpEditMode=false,histEditMode=false;
 let editingOrder=null,deleteOrderId=null;
-let eRecipientCount=0;
+let eRecipientCount=0,eIncomingBlockCount=0;
 
 function esc(v=''){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function decodeB64(str){const bytes=Uint8Array.from(atob(str),c=>c.charCodeAt(0));return new TextDecoder().decode(bytes);}
@@ -272,7 +273,13 @@ async function updateWithRetry(path,mutator,message,maxRetries=3){for(let i=0;i<
 // ===== Orders =====
 async function loadOrders(){const data=await fetchFileWithSha('orders.json');orders=data.content;orders.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));renderAll();}
 function renderAll(){renderIncoming();renderShipping();}
-function prodIdsIn(list){const s=new Set();list.forEach(o=>o.incoming.products.forEach(p=>s.add(p.product_id)));return[...s].sort();}
+
+// Get all unique product IDs across all incoming blocks in an order list
+function prodIdsIn(list){
+  const s=new Set();
+  list.forEach(o=>o.incoming.forEach(inc=>inc.products.forEach(p=>s.add(p.product_id))));
+  return[...s].sort();
+}
 function prodIdsOut(list){const s=new Set();list.forEach(o=>o.outgoing.forEach(r=>r.products.forEach(p=>s.add(p.product_id))));return[...s].sort();}
 function pn(id){const p=products.find(x=>x.id===id);return p?p.name:id;}
 function sel(g){return[...document.querySelectorAll(`input[data-group="${g}"]:checked`)].map(c=>c.value);}
@@ -306,6 +313,9 @@ function toggleShippingEdit(){shpEditMode=!shpEditMode;const lbl=shpEditMode?'�
 function toggleHistoryEdit(){histEditMode=!histEditMode;document.getElementById('histEditBtn').textContent=histEditMode?'完成':'编辑';renderHistoryList();}
 
 // ===== Render Incoming =====
+// Each order can have multiple incoming blocks.
+// Display: one sub-row per incoming block (express_code / pickup_code / products per block),
+// with filled_by merged via rowspan across all sub-rows of that order.
 function renderIncoming(){
   const active=orders.filter(o=>!o.picked_up);
   const archived=orders.filter(o=>o.picked_up);
@@ -315,7 +325,12 @@ function renderIncoming(){
   const list=isActive?active:archived;
   if(!list.length){w.innerHTML=`<div class="empty-state">${isActive?'没有未取货订单':'没有已取货订单'}</div>`;return;}
   const editMode=incEditMode;
-  const pids=prodIdsIn(list);const tot={};pids.forEach(id=>{tot[id]=0;});
+  const pids=prodIdsIn(list);
+
+  // totals: keyed by product_id, but we accumulate per incoming-block row
+  // We'll compute totals across all incoming blocks of all orders
+  const tot={};pids.forEach(id=>{tot[id]=0;});
+
   let h='<table class="data-table"><thead><tr>';
   if(isActive&&!editMode) h+='<th><input type="checkbox" onchange="togAll(\'incoming\',this.checked)"></th>';
   h+='<th>填表人</th><th>订单号</th><th>取货码</th>';
@@ -323,21 +338,38 @@ function renderIncoming(){
   h+='<th>日期</th>';
   if(editMode) h+='<th>操作</th>';
   h+='</tr></thead><tbody>';
+
   list.forEach(o=>{
-    h+='<tr>';
-    if(isActive&&!editMode) h+=`<td><input type="checkbox" data-group="incoming" value="${o.id}"></td>`;
-    h+=`<td>${esc(o.created_by||'')}</td><td>${esc(o.incoming.express_code)}</td><td>${esc(o.incoming.pickup_code)}</td>`;
-    pids.forEach(id=>{const x=o.incoming.products.find(z=>z.product_id===id);const q=x?x.quantity:0;tot[id]+=q;h+=`<td class="qty-cell">${q||''}</td>`;});
-    h+=`<td style="font-size:0.78rem;color:var(--text-light)">${new Date(o.created_at).toLocaleDateString('zh-CN')}</td>`;
-    if(editMode&&isActive) h+=`<td style="white-space:nowrap"><button class="btn btn-outline btn-sm" onclick="openEditOverlay('${o.id}')">修改</button> <button class="btn btn-danger btn-sm" onclick="confirmDelete('${o.id}')">删除</button></td>`;
-    if(editMode&&!isActive) h+=`<td style="white-space:nowrap"><button class="btn btn-outline btn-sm" onclick="openEditOverlay('${o.id}')">修改</button> <button class="btn btn-outline btn-sm" onclick="markUnpicked('${o.id}')">未取货</button></td>`;
-    h+='</tr>';
+    const incList=o.incoming;
+    const rowspan=incList.length;
+
+    incList.forEach((inc,ii)=>{
+      h+='<tr>';
+      if(ii===0){
+        // checkbox and filled_by span all incoming rows for this order
+        if(isActive&&!editMode) h+=`<td rowspan="${rowspan}" style="vertical-align:middle"><input type="checkbox" data-group="incoming" value="${o.id}"></td>`;
+        h+=`<td rowspan="${rowspan}" style="vertical-align:middle">${esc(o.created_by||'')}</td>`;
+      }
+      h+=`<td>${esc(inc.express_code)}</td><td>${esc(inc.pickup_code)}</td>`;
+      pids.forEach(id=>{
+        const x=inc.products.find(z=>z.product_id===id);
+        const q=x?x.quantity:0;
+        tot[id]+=q;
+        h+=`<td class="qty-cell">${q||''}</td>`;
+      });
+      if(ii===0){
+        h+=`<td rowspan="${rowspan}" style="vertical-align:middle;font-size:0.78rem;color:var(--text-light)">${new Date(o.created_at).toLocaleDateString('zh-CN')}</td>`;
+        if(editMode&&isActive) h+=`<td rowspan="${rowspan}" style="vertical-align:middle;white-space:nowrap"><button class="btn btn-outline btn-sm" onclick="openEditOverlay('${o.id}')">修改</button> <button class="btn btn-danger btn-sm" onclick="confirmDelete('${o.id}')">删除</button></td>`;
+        if(editMode&&!isActive) h+=`<td rowspan="${rowspan}" style="vertical-align:middle;white-space:nowrap"><button class="btn btn-outline btn-sm" onclick="openEditOverlay('${o.id}')">修改</button> <button class="btn btn-outline btn-sm" onclick="markUnpicked('${o.id}')">未取货</button></td>`;
+      }
+      h+='</tr>';
+    });
   });
+
   if(isActive){
-    const cspan=3;
     h+='<tr class="total-row">';
     if(!editMode) h+='<td></td>';
-    h+=`<td colspan="${cspan-1}"></td><td>合计</td>`;
+    h+='<td colspan="2"></td><td>合计</td>';
     pids.forEach(id=>{h+=`<td class="qty-cell">${tot[id]}</td>`;});
     h+='<td></td>';
     if(editMode) h+='<td></td>';
@@ -369,7 +401,8 @@ function renderShipping(){
   h+='</tr></thead><tbody>';
   list.forEach(o=>{
     const rl=o.outgoing.length||1;
-    const codeLbl=esc(o.incoming.express_code)+(o.picked_up?'':'<span style="color:var(--danger);font-size:0.75rem"> (未取货)</span>');
+    // Show all express codes, one per line, with (未取货) on each if not picked up
+    const allCodes=o.incoming.map(inc=>esc(inc.express_code)+(o.picked_up?'':'<span style="color:var(--danger);font-size:0.75rem"> (未取货)</span>')).join('<br>');
     let actionHtml='';
     if(editMode&&isActive) actionHtml=`<button class="btn btn-outline btn-sm" onclick="openEditOverlay('${o.id}')">修改</button> <button class="btn btn-danger btn-sm" onclick="confirmDelete('${o.id}')">删除</button>`;
     if(editMode&&!isActive) actionHtml=`<button class="btn btn-outline btn-sm" onclick="openEditOverlay('${o.id}')">修改</button> <button class="btn btn-outline btn-sm" onclick="markUnshipped('${o.id}')">未寄出</button>`;
@@ -377,7 +410,7 @@ function renderShipping(){
       h+='<tr>';
       if(ri===0){
         if(isActive&&!editMode) h+=`<td rowspan="${rl}" style="vertical-align:middle"><input type="checkbox" data-group="shipping" value="${o.id}"></td>`;
-        h+=`<td rowspan="${rl}" style="vertical-align:middle">${esc(o.created_by||'')}</td><td rowspan="${rl}" style="vertical-align:middle">${codeLbl}</td>`;
+        h+=`<td rowspan="${rl}" style="vertical-align:middle">${esc(o.created_by||'')}</td><td rowspan="${rl}" style="vertical-align:middle">${allCodes}</td>`;
       }
       h+=`<td>${esc(r.name)}</td><td>${esc(r.address)}</td><td>${esc(r.phone)}</td>`;
       pids.forEach(id=>{const x=r.products.find(z=>z.product_id===id);const q=x?x.quantity:0;tot[id]+=q;h+=`<td class="qty-cell">${q||''}</td>`;});
@@ -388,7 +421,7 @@ function renderShipping(){
     if(!o.outgoing.length){
       h+='<tr>';
       if(isActive&&!editMode) h+=`<td><input type="checkbox" data-group="shipping" value="${o.id}"></td>`;
-      h+=`<td>${esc(o.created_by||'')}</td><td>${codeLbl}</td><td colspan="${3+pids.length+1}">无收件人</td>`;
+      h+=`<td>${esc(o.created_by||'')}</td><td>${allCodes}</td><td colspan="${3+pids.length+1}">无收件人</td>`;
       if(editMode) h+=`<td style="white-space:nowrap">${actionHtml}</td>`;
       h+='</tr>';
     }
@@ -439,7 +472,8 @@ async function markUnshipped(id){
 function confirmDelete(id){
   const o=orders.find(x=>x.id===id);if(!o)return;
   deleteOrderId=id;
-  document.getElementById('deleteMessage').innerHTML=`确定要删除订单 <strong>${esc(o.incoming.express_code)}</strong> 吗？此操作无法撤销。`;
+  const codes=o.incoming.map(inc=>inc.express_code).join(', ');
+  document.getElementById('deleteMessage').innerHTML=`确定要删除订单 <strong>${esc(codes)}</strong> 吗？此操作无法撤销。`;
   document.getElementById('deleteModal').classList.add('active');
 }
 async function doDeleteOrder(){
@@ -450,22 +484,21 @@ async function doDeleteOrder(){
 }
 
 // ===== Edit Overlay =====
-function productOpts(selectedId=''){return products.map(p=>{const sel=p.id===selectedId?'selected':'';return`<option value="${esc(p.id)}" ${sel}>${esc(p.name)}</option>`;}).join('');}
+function productOpts(selectedId=''){return products.map(p=>{const s=p.id===selectedId?'selected':'';return`<option value="${esc(p.id)}" ${s}>${esc(p.name)}</option>`;}).join('');}
 
 function openEditOverlay(id){
   const o=orders.find(x=>x.id===id);if(!o)return;
   editingOrder=JSON.parse(JSON.stringify(o));
   document.getElementById('eCreatedBy').value=o.created_by||'';
-  document.getElementById('eExpressCode').value=o.incoming.express_code||'';
-  document.getElementById('ePickupCode').value=o.incoming.pickup_code||'';
-  document.getElementById('eIncomingProducts').innerHTML='';
+  document.getElementById('eIncomingList').innerHTML='';
   document.getElementById('eRecipientList').innerHTML='';
   document.getElementById('eValidationBox').className='validation-box';
   document.getElementById('eValidationBox').innerHTML='';
   eRecipientCount=0;
-  const ip=o.incoming.products||[];
-  if(ip.length) ip.forEach(p=>addEIncomingProduct(p.product_id,p.quantity));
-  else addEIncomingProduct();
+  eIncomingBlockCount=0;
+  const incomingList=o.incoming||[];
+  if(incomingList.length) incomingList.forEach(inc=>addEIncomingBlock(inc));
+  else addEIncomingBlock();
   const out=o.outgoing||[];
   if(out.length) out.forEach(r=>addERecipient(r));
   else addERecipient();
@@ -473,11 +506,37 @@ function openEditOverlay(id){
 }
 function closeEditOverlay(){editingOrder=null;document.getElementById('editOverlay').classList.remove('active');}
 
-function addEIncomingProduct(pid='',qty=''){
-  const c=document.getElementById('eIncomingProducts');const d=document.createElement('div');d.className='e-product-line';
+function addEIncomingBlock(data=null){
+  eIncomingBlockCount++;
+  const n=eIncomingBlockCount;
+  const c=document.getElementById('eIncomingList');
+  const d=document.createElement('div');
+  d.className='incoming-block';
+  d.id=`eib-${n}`;
+  d.innerHTML=`
+    <div class="incoming-block-header">
+      <span>来件单 #${n}</span>
+      <button class="btn btn-danger btn-sm" onclick="document.getElementById('eib-${n}').remove()">删除</button>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>订单号</label><input type="text" class="eib-express" value="${esc(data?.express_code||'')}" placeholder="订单号"></div>
+      <div class="form-group"><label>取货码</label><input type="text" class="eib-pickup" value="${esc(data?.pickup_code||'')}" placeholder="取货码"></div>
+    </div>
+    <label style="font-size:0.8rem;color:var(--text-light);display:block;margin-bottom:4px;">来件产品</label>
+    <div class="eib-products"></div>
+    <button class="btn btn-outline btn-sm" onclick="addEIncomingProduct(${n})" style="margin-top:4px;">+ 添加产品</button>`;
+  c.appendChild(d);
+  if(data&&data.products&&data.products.length) data.products.forEach(p=>addEIncomingProduct(n,p.product_id,p.quantity));
+  else addEIncomingProduct(n);
+}
+
+function addEIncomingProduct(blockN,pid='',qty=''){
+  const block=document.getElementById(`eib-${blockN}`);if(!block)return;
+  const c=block.querySelector('.eib-products');const d=document.createElement('div');d.className='e-product-line';
   d.innerHTML=`<select><option value="">请选择产品</option>${productOpts(pid)}</select><input type="number" min="1" value="${qty||''}" placeholder="数量" style="width:auto;flex:1;"><button onclick="this.parentElement.remove()">×</button>`;
   c.appendChild(d);
 }
+
 function addERecipient(data=null){
   eRecipientCount++;const n=eRecipientCount;const c=document.getElementById('eRecipientList');const d=document.createElement('div');
   d.className='recipient-card';d.id=`ercp-${n}`;
@@ -500,16 +559,23 @@ function addERcpProduct(n,pid='',qty=''){
 
 function collectEditData(){
   const createdBy=document.getElementById('eCreatedBy').value.trim();
-  const expressCode=document.getElementById('eExpressCode').value.trim();
-  const pickupCode=document.getElementById('ePickupCode').value.trim();
   if(!createdBy){showToast('请填写填表人称呼','error');return null;}
-  if(!expressCode||!pickupCode){showToast('请填写订单号和取货码','error');return null;}
-  const incomingProducts=[];
-  document.querySelectorAll('#eIncomingProducts .e-product-line').forEach(l=>{
-    const s=l.querySelector('select');const q=parseInt(l.querySelector('input').value)||0;
-    if(s.value&&q>0){const prod=products.find(p=>p.id===s.value);incomingProducts.push({product_id:s.value,name:prod?prod.name:s.value,quantity:q});}
-  });
-  if(!incomingProducts.length){showToast('请至少添加一个来件产品','error');return null;}
+
+  const incoming=[];
+  for(const block of document.querySelectorAll('#eIncomingList .incoming-block')){
+    const expressCode=block.querySelector('.eib-express').value.trim();
+    const pickupCode=block.querySelector('.eib-pickup').value.trim();
+    if(!expressCode||!pickupCode){showToast('请填写所有来件单的订单号和取货码','error');return null;}
+    const blockProducts=[];
+    block.querySelectorAll('.eib-products .e-product-line').forEach(l=>{
+      const s=l.querySelector('select');const q=parseInt(l.querySelector('input').value)||0;
+      if(s.value&&q>0){const prod=products.find(p=>p.id===s.value);blockProducts.push({product_id:s.value,name:prod?prod.name:s.value,quantity:q});}
+    });
+    if(!blockProducts.length){showToast('每张来件单至少需要一个产品','error');return null;}
+    incoming.push({express_code:expressCode,pickup_code:pickupCode,products:blockProducts});
+  }
+  if(!incoming.length){showToast('请至少添加一张来件单','error');return null;}
+
   const outgoing=[];
   document.querySelectorAll('#eRecipientList .recipient-card').forEach(card=>{
     const name=card.querySelector('.r-name').value.trim();
@@ -523,12 +589,18 @@ function collectEditData(){
     });
     if(name||phone||address||rp.length||notes) outgoing.push({name,phone,address,products:rp,notes});
   });
-  return{...editingOrder,created_by:createdBy,incoming:{express_code:expressCode,pickup_code:pickupCode,products:incomingProducts},outgoing};
+  return{...editingOrder,created_by:createdBy,incoming,outgoing};
 }
 
 function getEditQtyMismatches(){
   const inc={},out={};
-  document.querySelectorAll('#eIncomingProducts .e-product-line').forEach(l=>{const id=l.querySelector('select').value;const q=parseInt(l.querySelector('input').value)||0;if(id&&q>0)inc[id]=(inc[id]||0)+q;});
+  // Aggregate across all incoming blocks
+  document.querySelectorAll('#eIncomingList .incoming-block').forEach(block=>{
+    block.querySelectorAll('.eib-products .e-product-line').forEach(l=>{
+      const id=l.querySelector('select').value;const q=parseInt(l.querySelector('input').value)||0;
+      if(id&&q>0)inc[id]=(inc[id]||0)+q;
+    });
+  });
   document.querySelectorAll('#eRecipientList .r-products .e-product-line').forEach(l=>{const id=l.querySelector('select').value;const q=parseInt(l.querySelector('input').value)||0;if(id&&q>0)out[id]=(out[id]||0)+q;});
   const all=new Set([...Object.keys(inc),...Object.keys(out)]);const mm=[];
   for(const id of all){const i=inc[id]||0;const o=out[id]||0;if(i!==o)mm.push(`${pn(id)}: 来件 ${i}, 收件合计 ${o}`);}
@@ -548,7 +620,8 @@ async function saveEditOrder(force=false){
   }
   showLoading(true);
   try{
-    await updateWithRetry('orders.json',d=>d.map(o=>o.id===editingOrder.id?updated:o),`修改订单 ${updated.incoming.express_code}`);
+    const firstCode=updated.incoming[0].express_code;
+    await updateWithRetry('orders.json',d=>d.map(o=>o.id===editingOrder.id?updated:o),`修改订单 ${firstCode}`);
     const data=await fetchFileWithSha('orders.json');orders=data.content;orders.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
     closeEditOverlay();renderAll();showToast('订单修改成功','success');
   }catch(e){showToast('修改失败: '+e.message,'error');}
@@ -567,12 +640,34 @@ async function doExportIncomingPDF(){
   if(!pickupDate||!pickupPerson){showToast('请填写提货日期和提货人','error');return;}
   closeModal('exportModal');showLoading(true);
   try{
-    const selected=orders.filter(o=>pendingExportIds.includes(o.id));const pids=prodIdsIn(selected);const tot={};pids.forEach(id=>{tot[id]=0;});
+    const selected=orders.filter(o=>pendingExportIds.includes(o.id));
+    const pids=prodIdsIn(selected);
+    const tot={};pids.forEach(id=>{tot[id]=0;});
     const S='border:1px solid #555;padding:5px 8px;background:#eee;';
-    let rows='';selected.forEach(o=>{rows+=`<tr><td>${esc(o.created_by||'')}</td><td>${esc(o.incoming.express_code)}</td><td>${esc(o.incoming.pickup_code)}</td>`;pids.forEach(id=>{const x=o.incoming.products.find(z=>z.product_id===id);const q=x?x.quantity:0;tot[id]+=q;rows+=`<td style="text-align:center">${q||''}</td>`;});rows+='</tr>';});
-    rows+='<tr style="font-weight:bold;border-top:2px solid #333"><td colspan="3" style="text-align:right">合计</td>';pids.forEach(id=>{rows+=`<td style="text-align:center">${tot[id]}</td>`;});rows+='</tr>';
+    let rows='';
+    selected.forEach(o=>{
+      // One row per incoming block
+      o.incoming.forEach((inc,ii)=>{
+        rows+=`<tr>`;
+        // Only show created_by on first row of this order using rowspan
+        if(ii===0) rows+=`<td rowspan="${o.incoming.length}" style="border:1px solid #555;padding:5px 8px;vertical-align:middle">${esc(o.created_by||'')}</td>`;
+        rows+=`<td style="border:1px solid #555;padding:5px 8px;">${esc(inc.express_code)}</td>`;
+        rows+=`<td style="border:1px solid #555;padding:5px 8px;">${esc(inc.pickup_code)}</td>`;
+        pids.forEach(id=>{
+          const x=inc.products.find(z=>z.product_id===id);
+          const q=x?x.quantity:0;
+          tot[id]+=q;
+          rows+=`<td style="border:1px solid #555;padding:5px 8px;text-align:center">${q||''}</td>`;
+        });
+        rows+=`</tr>`;
+      });
+    });
+    // Totals row
+    rows+=`<tr style="font-weight:bold;border-top:2px solid #333"><td colspan="3" style="border:1px solid #555;padding:5px 8px;text-align:right">合计</td>`;
+    pids.forEach(id=>{rows+=`<td style="border:1px solid #555;padding:5px 8px;text-align:center">${tot[id]}</td>`;});
+    rows+=`</tr>`;
     const ph=pids.map(id=>`<th style="text-align:center;${S}">${esc(pn(id))}</th>`).join('');
-    const html=`<div style="font-family:'Noto Sans SC','Microsoft YaHei',sans-serif;padding:30px;color:#222;"><h2 style="text-align:center;margin-bottom:8px;font-size:18px;">来件提货单</h2><div style="margin-bottom:16px;font-size:13px;"><span style="margin-right:40px;">提货日期: ${esc(pickupDate)}</span><span>提货人: ${esc(pickupPerson)}</span></div><table style="width:100%;border-collapse:collapse;font-size:12px;"><thead><tr><th style="${S}">填表人</th><th style="${S}">订单号</th><th style="${S}">取货码</th>${ph}</tr></thead><tbody>${rows.replace(/<td/g,'<td style="border:1px solid #555;padding:5px 8px;"')}</tbody></table></div>`;
+    const html=`<div style="font-family:'Noto Sans SC','Microsoft YaHei',sans-serif;padding:30px;color:#222;"><h2 style="text-align:center;margin-bottom:8px;font-size:18px;">来件提货单</h2><div style="margin-bottom:16px;font-size:13px;"><span style="margin-right:40px;">提货日期: ${esc(pickupDate)}</span><span>提货人: ${esc(pickupPerson)}</span></div><table style="width:100%;border-collapse:collapse;font-size:12px;"><thead><tr><th style="${S}">填表人</th><th style="${S}">订单号</th><th style="${S}">取货码</th>${ph}</tr></thead><tbody>${rows}</tbody></table></div>`;
     const blob=await genPdf(html);
     const pdfUrl=URL.createObjectURL(blob);window.open(pdfUrl,'_blank');
     const fn=`pickup_${ts()}.pdf`;
@@ -582,7 +677,7 @@ async function doExportIncomingPDF(){
   showLoading(false);
 }
 
-// ===== Export Shipping PDF (no 填表人, no 订单号) =====
+// ===== Export Shipping PDF =====
 async function exportShippingPDF(){
   const ids=sel('shipping');if(!ids.length){showToast('请先勾选要导出的订单','error');return;}
   showLoading(true);
@@ -666,10 +761,8 @@ async function doDeletePdf(){
   const{folder,filename}=pendingDeletePdf;pendingDeletePdf=null;
   showLoading(true);
   try{
-    // delete the PDF file
     const fres=await fetch(`${API}/${folder}/${filename}`,{headers:HEADERS});
     if(fres.ok){const fd=await fres.json();await fetch(`${API}/${folder}/${filename}`,{method:'DELETE',headers:HEADERS,body:JSON.stringify({sha:fd.sha,message:`删除 ${filename}`})});}
-    // remove from index.json
     const ip=`${folder}/index.json`;
     const ires=await fetch(`${API}/${ip}`,{headers:HEADERS});
     if(ires.ok){const id=await ires.json();let idx=JSON.parse(decodeB64(id.content));idx=idx.filter(e=>e.filename!==filename);await fetch(`${API}/${ip}`,{method:'PUT',headers:HEADERS,body:JSON.stringify({content:encodeB64(JSON.stringify(idx,null,2)),sha:id.sha,message:'更新索引'})});}
@@ -709,4 +802,5 @@ function showToast(msg,type){const t=document.getElementById('toast');t.textCont
 function showLoading(on){document.getElementById('loading').classList.toggle('active',on);}
 </script>
 </body>
+
 </html>
