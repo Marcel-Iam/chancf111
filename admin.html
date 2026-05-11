@@ -23,7 +23,7 @@
   .tab:hover{color:var(--accent);}
   .tab-content{display:none;}
   .tab-content.active{display:block;}
-  .sub-tabs{display:flex;gap:0;margin-bottom:16px;}
+  .sub-tabs{display:flex;gap:0;}
   .sub-tab{padding:6px 16px;cursor:pointer;font-size:0.8rem;font-weight:500;color:var(--text-light);background:var(--card);border:1px solid var(--border);font-family:'Noto Sans SC',sans-serif;transition:all 0.2s;}
   .sub-tab:first-child{border-radius:4px 0 0 4px;}
   .sub-tab:last-child{border-radius:0 4px 4px 0;border-left:none;}
@@ -119,55 +119,60 @@
 
   <!-- 来件管理 -->
   <div id="tab-incoming" class="tab-content active">
-    <div class="sub-tabs">
-      <button class="sub-tab active" onclick="setIncomingView('active')">未取货 <span id="incActiveCount"></span></button>
-      <button class="sub-tab" onclick="setIncomingView('archived')">已取货 </button>
-    </div>
     <div id="incActiveToolbar" class="toolbar">
       <div class="toolbar-left">
         <button class="btn btn-accent" onclick="exportIncomingPDF()">生成取件单</button>
         <button class="btn btn-success" onclick="markPickedUp()">已取货</button>
         <button class="btn btn-outline" id="incEditBtn" onclick="toggleIncomingEdit()">编辑</button>
+        <span id="incActiveCount"></span>
       </div>
-      <div class="toolbar-right"><button class="btn btn-outline" onclick="loadOrders()">刷新</button></div>
+      <div class="toolbar-right">
+        <div class="sub-tabs"><button class="sub-tab active" onclick="setIncomingView('active')">未取货</button><button class="sub-tab" onclick="setIncomingView('archived')">已取货</button></div>
+        <button class="btn btn-outline" onclick="loadOrders()">刷新</button>
+      </div>
     </div>
     <div id="incArchivedToolbar" class="toolbar" style="display:none;">
       <div class="toolbar-left"><button class="btn btn-outline" id="incArchEditBtn" onclick="toggleIncomingEdit()">编辑</button></div>
-      <div class="toolbar-right"><button class="btn btn-outline" onclick="loadOrders()">刷新</button></div>
+      <div class="toolbar-right">
+        <div class="sub-tabs"><button class="sub-tab" onclick="setIncomingView('active')">未取货</button><button class="sub-tab active" onclick="setIncomingView('archived')">已取货</button></div>
+        <button class="btn btn-outline" onclick="loadOrders()">刷新</button>
+      </div>
     </div>
     <div class="section"><div class="table-wrap" id="incomingTableWrap"></div></div>
   </div>
 
   <!-- 寄件管理 -->
   <div id="tab-shipping" class="tab-content">
-    <div class="sub-tabs">
-      <button class="sub-tab active" onclick="setShippingView('active')">未寄出 <span id="shpActiveCount"></span></button>
-      <button class="sub-tab" onclick="setShippingView('archived')">已寄出 </button>
-    </div>
     <div id="shpActiveToolbar" class="toolbar">
       <div class="toolbar-left">
         <button class="btn btn-accent" onclick="exportShippingPDF()">生成寄件单</button>
         <button class="btn btn-success" onclick="markShipped()">已寄出</button>
         <button class="btn btn-outline" id="shpEditBtn" onclick="toggleShippingEdit()">编辑</button>
+        <span id="shpActiveCount"></span>
       </div>
-      <div class="toolbar-right"><button class="btn btn-outline" onclick="loadOrders()">刷新</button></div>
+      <div class="toolbar-right">
+        <div class="sub-tabs"><button class="sub-tab active" onclick="setShippingView('active')">未寄出</button><button class="sub-tab" onclick="setShippingView('archived')">已寄出</button></div>
+        <button class="btn btn-outline" onclick="loadOrders()">刷新</button>
+      </div>
     </div>
     <div id="shpArchivedToolbar" class="toolbar" style="display:none;">
       <div class="toolbar-left"><button class="btn btn-outline" id="shpArchEditBtn" onclick="toggleShippingEdit()">编辑</button></div>
-      <div class="toolbar-right"><button class="btn btn-outline" onclick="loadOrders()">刷新</button></div>
+      <div class="toolbar-right">
+        <div class="sub-tabs"><button class="sub-tab" onclick="setShippingView('active')">未寄出</button><button class="sub-tab active" onclick="setShippingView('archived')">已寄出</button></div>
+        <button class="btn btn-outline" onclick="loadOrders()">刷新</button>
+      </div>
     </div>
     <div class="section"><div class="table-wrap" id="shippingTableWrap"></div></div>
   </div>
 
   <!-- 历史档案 -->
   <div id="tab-history" class="tab-content">
-    <div class="sub-tabs">
-      <button class="sub-tab active" onclick="setHistoryView('pickup')">历史取货单</button>
-      <button class="sub-tab" onclick="setHistoryView('shipping')">历史寄件单</button>
-    </div>
     <div class="toolbar">
-      <div class="toolbar-left"><span id="historyCount"></span></div>
-      <div class="toolbar-right"><button class="btn btn-outline" onclick="loadHistory()">刷新</button></div>
+      <div class="toolbar-left"><button class="btn btn-outline" id="histEditBtn" onclick="toggleHistoryEdit()">编辑</button> <span id="historyCount"></span></div>
+      <div class="toolbar-right">
+        <div class="sub-tabs"><button class="sub-tab active" onclick="setHistoryView('pickup')">历史取货单</button><button class="sub-tab" onclick="setHistoryView('shipping')">历史寄件单</button></div>
+        <button class="btn btn-outline" onclick="loadHistory()">刷新</button>
+      </div>
     </div>
     <div class="section"><div id="historyList"></div></div>
   </div>
@@ -190,6 +195,9 @@
 
 <!-- 删除确认弹窗 -->
 <div class="modal-overlay" id="deleteModal"><div class="confirm-box"><div class="confirm-title">确认删除</div><div id="deleteMessage" class="confirm-message"></div><div class="confirm-actions"><button class="btn btn-outline" onclick="closeModal('deleteModal')">取消</button><button class="btn btn-danger" onclick="doDeleteOrder()">删除</button></div></div></div>
+
+<!-- 删除档案确认弹窗 -->
+<div class="modal-overlay" id="deletePdfModal"><div class="confirm-box"><div class="confirm-title">确认删除档案</div><div id="deletePdfMessage" class="confirm-message"></div><div class="confirm-actions"><button class="btn btn-outline" onclick="closeModal('deletePdfModal')">取消</button><button class="btn btn-danger" onclick="doDeletePdf()">删除</button></div></div></div>
 
 <!-- 数量不匹配确认弹窗 -->
 <div class="modal-overlay" id="qtyConfirmModal"><div class="confirm-box"><div class="confirm-title">产品数量不匹配</div><div id="qtyConfirmMessage" class="confirm-message"></div><div class="confirm-actions"><button class="btn btn-outline" onclick="closeModal('qtyConfirmModal')">取消</button><button class="btn btn-accent" onclick="confirmQtyMismatch()">仍然保存</button></div></div></div>
@@ -229,9 +237,11 @@
 <div class="loading-overlay" id="loading"><div class="spinner"></div></div>
 
 <script>
-const CONFIG={  owner: 'Marcel-Iam',
-  repo: 'chancf111',
-  _k: '8.26.20.58.38.53.15.37.120.35.73.107.98.0.13.56.74.6.22.59.10.64.71.45.16.55.89.118.98.126.40.74.9.12.70.99.52.36.47.84',password:'456456'};
+const CONFIG={  
+    owner: 'Marcel-Iam',
+    repo: 'chancf111',
+    _k: '8.26.20.58.38.53.15.37.120.35.73.107.98.0.13.56.74.6.22.59.10.64.71.45.16.55.89.118.98.126.40.74.9.12.70.99.52.36.47.84',
+    password:'456456'};
 function _d(s){var k='orderSysKey2025';return s.split('.').map(function(n,i){return String.fromCharCode(parseInt(n)^k.charCodeAt(i%k.length));}).join('');}
 const TOKEN=_d(CONFIG._k);
 const API=`https://api.github.com/repos/${CONFIG.owner}/${CONFIG.repo}/contents`;
@@ -241,7 +251,7 @@ const TAB_NAMES=['incoming','shipping','history','products'];
 
 let orders=[],products=[],pendingExportIds=[];
 let incView='active',shpView='active',histView='pickup';
-let incEditMode=false,shpEditMode=false;
+let incEditMode=false,shpEditMode=false,histEditMode=false;
 let editingOrder=null,deleteOrderId=null;
 let eRecipientCount=0;
 
@@ -273,7 +283,6 @@ function setIncomingView(v){
   incView=v;incEditMode=false;
   document.getElementById('incEditBtn').textContent='编辑';
   document.getElementById('incArchEditBtn').textContent='编辑';
-  document.querySelectorAll('#tab-incoming .sub-tab').forEach((t,i)=>{t.classList.toggle('active',i===(v==='active'?0:1));});
   document.getElementById('incActiveToolbar').style.display=v==='active'?'':'none';
   document.getElementById('incArchivedToolbar').style.display=v==='archived'?'':'none';
   renderIncoming();
@@ -282,24 +291,25 @@ function setShippingView(v){
   shpView=v;shpEditMode=false;
   document.getElementById('shpEditBtn').textContent='编辑';
   document.getElementById('shpArchEditBtn').textContent='编辑';
-  document.querySelectorAll('#tab-shipping .sub-tab').forEach((t,i)=>{t.classList.toggle('active',i===(v==='active'?0:1));});
   document.getElementById('shpActiveToolbar').style.display=v==='active'?'':'none';
   document.getElementById('shpArchivedToolbar').style.display=v==='archived'?'':'none';
   renderShipping();
 }
 function setHistoryView(v){
-  histView=v;
+  histView=v;histEditMode=false;
+  document.getElementById('histEditBtn').textContent='编辑';
   document.querySelectorAll('#tab-history .sub-tab').forEach((t,i)=>{t.classList.toggle('active',i===(v==='pickup'?0:1));});
   renderHistoryList();
 }
 function toggleIncomingEdit(){incEditMode=!incEditMode;const lbl=incEditMode?'完成':'编辑';document.getElementById(incView==='active'?'incEditBtn':'incArchEditBtn').textContent=lbl;renderIncoming();}
 function toggleShippingEdit(){shpEditMode=!shpEditMode;const lbl=shpEditMode?'完成':'编辑';document.getElementById(shpView==='active'?'shpEditBtn':'shpArchEditBtn').textContent=lbl;renderShipping();}
+function toggleHistoryEdit(){histEditMode=!histEditMode;document.getElementById('histEditBtn').textContent=histEditMode?'完成':'编辑';renderHistoryList();}
 
 // ===== Render Incoming =====
 function renderIncoming(){
   const active=orders.filter(o=>!o.picked_up);
   const archived=orders.filter(o=>o.picked_up);
-  document.getElementById('incActiveCount').textContent=`(${active.length})`;
+  document.getElementById('incActiveCount').textContent=`${active.length} 个未取货订单`;
   const w=document.getElementById('incomingTableWrap');
   const isActive=incView==='active';
   const list=isActive?active:archived;
@@ -341,11 +351,13 @@ function renderIncoming(){
 function renderShipping(){
   const active=orders.filter(o=>!o.shipped);
   const archived=orders.filter(o=>o.shipped);
-  document.getElementById('shpActiveCount').textContent=`(${active.length})`;
+  const rc=active.reduce((s,o)=>s+o.outgoing.length,0);
+  document.getElementById('shpActiveCount').textContent=`${active.length} 个未寄出订单, ${rc} 个收件人`;
   const w=document.getElementById('shippingTableWrap');
   const isActive=shpView==='active';
   const list=isActive?active:archived;
   if(!list.length){w.innerHTML=`<div class="empty-state">${isActive?'没有未寄出订单':'没有已寄出订单'}</div>`;return;}
+  list.sort((a,b)=>{if(a.picked_up!==b.picked_up)return a.picked_up?-1:1;return new Date(b.created_at)-new Date(a.created_at);});
   const editMode=shpEditMode;
   const pids=prodIdsOut(list);const tot={};pids.forEach(id=>{tot[id]=0;});
   let h='<table class="data-table"><thead><tr>';
@@ -357,6 +369,7 @@ function renderShipping(){
   h+='</tr></thead><tbody>';
   list.forEach(o=>{
     const rl=o.outgoing.length||1;
+    const codeLbl=esc(o.incoming.express_code)+(o.picked_up?'':'<span style="color:var(--danger);font-size:0.75rem"> (未取货)</span>');
     let actionHtml='';
     if(editMode&&isActive) actionHtml=`<button class="btn btn-outline btn-sm" onclick="openEditOverlay('${o.id}')">修改</button> <button class="btn btn-danger btn-sm" onclick="confirmDelete('${o.id}')">删除</button>`;
     if(editMode&&!isActive) actionHtml=`<button class="btn btn-outline btn-sm" onclick="openEditOverlay('${o.id}')">修改</button> <button class="btn btn-outline btn-sm" onclick="markUnshipped('${o.id}')">未寄出</button>`;
@@ -364,7 +377,7 @@ function renderShipping(){
       h+='<tr>';
       if(ri===0){
         if(isActive&&!editMode) h+=`<td rowspan="${rl}" style="vertical-align:middle"><input type="checkbox" data-group="shipping" value="${o.id}"></td>`;
-        h+=`<td rowspan="${rl}" style="vertical-align:middle">${esc(o.created_by||'')}</td><td rowspan="${rl}" style="vertical-align:middle">${esc(o.incoming.express_code)}</td>`;
+        h+=`<td rowspan="${rl}" style="vertical-align:middle">${esc(o.created_by||'')}</td><td rowspan="${rl}" style="vertical-align:middle">${codeLbl}</td>`;
       }
       h+=`<td>${esc(r.name)}</td><td>${esc(r.address)}</td><td>${esc(r.phone)}</td>`;
       pids.forEach(id=>{const x=r.products.find(z=>z.product_id===id);const q=x?x.quantity:0;tot[id]+=q;h+=`<td class="qty-cell">${q||''}</td>`;});
@@ -375,7 +388,7 @@ function renderShipping(){
     if(!o.outgoing.length){
       h+='<tr>';
       if(isActive&&!editMode) h+=`<td><input type="checkbox" data-group="shipping" value="${o.id}"></td>`;
-      h+=`<td>${esc(o.created_by||'')}</td><td>${esc(o.incoming.express_code)}</td><td colspan="${3+pids.length+1}">无收件人</td>`;
+      h+=`<td>${esc(o.created_by||'')}</td><td>${codeLbl}</td><td colspan="${3+pids.length+1}">无收件人</td>`;
       if(editMode) h+=`<td style="white-space:nowrap">${actionHtml}</td>`;
       h+='</tr>';
     }
@@ -625,18 +638,44 @@ function renderHistoryList(){
   const filtered=historyData.filter(e=>histView==='pickup'?e.type==='pickup':e.type==='shipping');
   document.getElementById('historyCount').textContent=`${filtered.length} 个档案`;
   if(!filtered.length){c.innerHTML='<div class="empty-state">没有历史档案</div>';return;}
-  c.innerHTML=filtered.map(e=>{
+  c.innerHTML=filtered.map((e,idx)=>{
     const t=new Date(e.created_at).toLocaleString('zh-CN');
     const isP=e.type==='pickup';
     const lbl=isP?'提货单':'寄件单';
     const det=isP?`${esc(e.pickup_date)} | ${esc(e.person)} | ${e.order_count} 个订单`:`${esc(e.date)} | ${e.order_count} 个订单, ${e.recipient_count} 个收件人`;
-    return`<div class="history-item"><div class="history-info"><span class="history-date">${esc(lbl)} - ${det}</span><span class="history-meta">生成时间: ${esc(t)}</span></div><button class="btn btn-outline" onclick="viewPdf('${e._folder}','${e.filename}')">检视</button></div>`;
+    const btn=histEditMode
+      ?`<button class="btn btn-danger" onclick="confirmDeletePdf('${e._folder}','${e.filename}')">删除</button>`
+      :`<button class="btn btn-outline" onclick="viewPdf('${e._folder}','${e.filename}')">检视</button>`;
+    return`<div class="history-item"><div class="history-info"><span class="history-date">${esc(lbl)} - ${det}</span><span class="history-meta">生成时间: ${esc(t)}</span></div>${btn}</div>`;
   }).join('');
 }
 async function viewPdf(folder,filename){
   showLoading(true);
   try{const res=await fetch(`${API}/${folder}/${filename}`,{headers:HEADERS});if(!res.ok)throw new Error('文件读取失败');const data=await res.json();const bin=atob(data.content);const bytes=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);const blob=new Blob([bytes],{type:'application/pdf'});window.open(URL.createObjectURL(blob),'_blank');}
   catch(e){showToast('无法打开: '+e.message,'error');}showLoading(false);
+}
+
+let pendingDeletePdf=null;
+function confirmDeletePdf(folder,filename){
+  pendingDeletePdf={folder,filename};
+  document.getElementById('deletePdfMessage').innerHTML=`确定要删除档案 <strong>${esc(filename)}</strong> 吗？<br><br>删除后无法还原。`;
+  document.getElementById('deletePdfModal').classList.add('active');
+}
+async function doDeletePdf(){
+  closeModal('deletePdfModal');if(!pendingDeletePdf)return;
+  const{folder,filename}=pendingDeletePdf;pendingDeletePdf=null;
+  showLoading(true);
+  try{
+    // delete the PDF file
+    const fres=await fetch(`${API}/${folder}/${filename}`,{headers:HEADERS});
+    if(fres.ok){const fd=await fres.json();await fetch(`${API}/${folder}/${filename}`,{method:'DELETE',headers:HEADERS,body:JSON.stringify({sha:fd.sha,message:`删除 ${filename}`})});}
+    // remove from index.json
+    const ip=`${folder}/index.json`;
+    const ires=await fetch(`${API}/${ip}`,{headers:HEADERS});
+    if(ires.ok){const id=await ires.json();let idx=JSON.parse(decodeB64(id.content));idx=idx.filter(e=>e.filename!==filename);await fetch(`${API}/${ip}`,{method:'PUT',headers:HEADERS,body:JSON.stringify({content:encodeB64(JSON.stringify(idx,null,2)),sha:id.sha,message:'更新索引'})});}
+    showToast('档案已删除','success');await loadHistory();
+  }catch(e){showToast('删除失败: '+e.message,'error');}
+  showLoading(false);
 }
 
 // ===== Products =====
