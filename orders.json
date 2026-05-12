@@ -116,150 +116,76 @@
       }
     ]
   },
-    {
-  "id": "ORD_20260512_1234",
-  "created_at": "2026-05-12T14:26:03.017Z",
-  "created_by": "sunny",
-  "paid_status": false,
-  "picked_up": false,
-  "shipped": false,
-  "incoming": [
-    {
-      "express_code": "640489",
-      "pickup_code": "549777",
-      "products": [
-        {
-          "product_id": "沛泉Reserve",
-          "name": "沛泉 Reserve",
-          "quantity": 24
-        },
-        {
-          "product_id": "修复霜Night Repair",
-          "name": "修复霜Night Repair",
-          "quantity": 6
-        }
-      ]
-    }
-  ],
-  "outgoing": [
-    {
-      "name": "何超",
-      "phone": "13145880926",
-      "address": "深圳市南山区南头街道嘉南美地B602",
-      "products": [
-        {
-          "product_id": "沛泉Reserve",
-          "name": "沛泉 Reserve",
-          "quantity": 6
-        }
-      ],
-      "notes": ""
-    },
-    {
-      "name": "范锦芬",
-      "phone": "13957151163",
-      "address": "浙江省杭州市西湖区文锦苑 13-1-202",
-      "products": [
-        {
-          "product_id": "沛泉Reserve",
-          "name": "沛泉 Reserve",
-          "quantity": 6
-        }
-      ],
-      "notes": ""
-    },
-    {
-      "name": "张露",
-      "phone": "13071002751",
-      "address": "河南省新乡市原阳县中心医院向南50米综合服务部",
-      "products": [
-        {
-          "product_id": "沛泉Reserve",
-          "name": "沛泉 Reserve",
-          "quantity": 12
-        },
-        {
-          "product_id": "修复霜Night Repair",
-          "name": "修复霜Night Repair",
-          "quantity": 6
-        }
-      ],
-      "notes": ""
-    }
-  ]
-},
-    {
-  "id": "ORD_20260512_5678",
-  "created_at": "2026-05-12T14:26:03.017Z",
-  "created_by": "sunny",
-  "paid_status": false,
-  "picked_up": false,
-  "shipped": false,
-  "incoming": [
-    {
-      "express_code": "636536",
-      "pickup_code": "723084",
-      "products": [
-        {
-          "product_id": "精华serum",
-          "name": "精华露 Serum",
-          "quantity": 6
-        }
-      ]
-    }
-  ],
-  "outgoing": [
-    {
-      "name": "禤育敏",
-      "phone": "13903077266",
-      "address": "广州番禺南浦海龙湾山水轩一梯102",
-      "products": [
-        {
-          "product_id": "精华serum",
-          "name": "精华露 Serum",
-          "quantity": 6
-        }
-      ],
-      "notes": ""
-    }
-  ]
-},
-    {
-  "id": "ORD_20260512_5678",
-  "created_at": "2026-05-12T14:26:03.017Z",
-  "created_by": "sunny",
-  "paid_status": false,
-  "picked_up": false,
-  "shipped": false,
-  "incoming": [
-    {
-      "express_code": "636536",
-      "pickup_code": "723084",
-      "products": [
-        {
-          "product_id": "精华serum",
-          "name": "精华露 Serum",
-          "quantity": 6
-        }
-      ]
-    }
-  ],
-  "outgoing": [
-    {
-      "name": "禤育敏",
-      "phone": "13903077266",
-      "address": "广州番禺南浦海龙湾山水轩一梯102",
-      "products": [
-        {
-          "product_id": "精华serum",
-          "name": "精华露 Serum",
-          "quantity": 6
-        }
-      ],
-      "notes": ""
-    }
-  ]
-}
-
-    
+  {
+    "id": "ORD_20260512_1234",
+    "created_at": "2026-05-12T14:26:03.017Z",
+    "created_by": "sunny",
+    "paid_status": false,
+    "picked_up": false,
+    "shipped": false,
+    "incoming": [
+      {
+        "express_code": "640489",
+        "pickup_code": "549777",
+        "products": [
+          {
+            "product_id": "沛泉Reserve",
+            "name": "沛泉 Reserve",
+            "quantity": 24
+          },
+          {
+            "product_id": "修复霜Night Repair",
+            "name": "修复霜Night Repair",
+            "quantity": 6
+          }
+        ]
+      }
+    ],
+    "outgoing": [
+      {
+        "name": "何超",
+        "phone": "13145880926",
+        "address": "深圳市南山区南头街道嘉南美地B602",
+        "products": [
+          {
+            "product_id": "沛泉Reserve",
+            "name": "沛泉 Reserve",
+            "quantity": 6
+          }
+        ],
+        "notes": ""
+      },
+      {
+        "name": "范锦芬",
+        "phone": "13957151163",
+        "address": "浙江省杭州市西湖区文锦苑 13-1-202",
+        "products": [
+          {
+            "product_id": "沛泉Reserve",
+            "name": "沛泉 Reserve",
+            "quantity": 6
+          }
+        ],
+        "notes": ""
+      },
+      {
+        "name": "张露",
+        "phone": "13071002751",
+        "address": "河南省新乡市原阳县中心医院向南50米综合服务部",
+        "products": [
+          {
+            "product_id": "沛泉Reserve",
+            "name": "沛泉 Reserve",
+            "quantity": 12
+          },
+          {
+            "product_id": "修复霜Night Repair",
+            "name": "修复霜Night Repair",
+            "quantity": 6
+          }
+        ],
+        "notes": ""
+      }
+    ]
+  }
 ]
