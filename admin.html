@@ -321,6 +321,7 @@ function renderIncoming(){
   const active=orders.filter(o=>!o.picked_up);
   const archived=orders.filter(o=>o.picked_up);
   document.getElementById('incActiveCount').textContent=`${active.length} 个未取货订单`;
+    document.querySelectorAll('#tab-incoming .sub-tab').forEach((t,i)=>{if(i===0)t.textContent=`未取货 (${active.length})`;});
   const w=document.getElementById('incomingTableWrap');
   const isActive=incView==='active';
   const list=isActive?active:archived;
@@ -387,6 +388,7 @@ function renderShipping(){
   const archived=orders.filter(o=>o.shipped);
   const rc=active.reduce((s,o)=>s+o.outgoing.length,0);
   document.getElementById('shpActiveCount').textContent=`${active.length} 个未寄出订单, ${rc} 个收件人`;
+    document.querySelectorAll('#tab-shipping .sub-tab').forEach((t,i)=>{if(i===0)t.textContent=`未寄出 (${active.length})`;});
   const w=document.getElementById('shippingTableWrap');
   const isActive=shpView==='active';
   const list=isActive?active:archived;
