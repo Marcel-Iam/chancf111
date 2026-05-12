@@ -577,7 +577,7 @@
 const CONFIG = {
     owner: 'Marcel-Iam',
     repo: 'chancf111',
-    _k: '8.26.20.58.38.53.15.37.120.35.73.107.98.0.13.56.74.6.22.59.10.64.71.45.16.55.89.118.98.126.40.74.9.12.70.99.52.36.47.84'
+    _k: '8.26.20.58.38.53.15.37.120.35.73.107.98.0.13.56.74.6.22.59.10.64.71.45.16.55.89.118.98.126.40.74.9.12.70.99.52.36.47.84',
 };
 
 function _d(s) {
@@ -1066,7 +1066,7 @@ function collectOrderData(existingOrder = null) {
     id: base.id || 'ORD_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
     created_at: base.created_at || new Date().toISOString(),
     created_by: createdBy,
-    status: base.status || '待处理',
+    paid_status: base.paid_status ?? false,
     picked_up: base.picked_up ?? false,
     shipped: base.shipped ?? false,
     incoming,

@@ -13,7 +13,7 @@
 /
 ├── index.html              客户下单页面
 ├── admin.html              管理后台
-├── orders.json             订单数据
+├── orders.json             订单数据（初始值为 []，不可为空白文件）
 ├── products.json           产品列表
 ├── history_pickup/         取货单 PDF 存档
 │   ├── index.json          索引（文件名、日期、提货人、订单数等 meta）
@@ -30,30 +30,40 @@
 
 ### orders.json
 
-数组，每个元素是一个订单：
+数组，每个元素是一个订单。初始状态必须是 `[]`，空白文件会导致 `JSON.parse` 报错。
 
 ```json
 {
   "id": "ORD_1715200000001_a1b2",
   "created_at": "2025-05-08T10:30:00.000Z",
   "created_by": "小陈",
-  "status": "待处理",
+  "paid_status": false,
   "picked_up": false,
   "shipped": false,
-  "incoming": {
-    "express_code": "DD20250508001",
-    "pickup_code": "8832",
-    "products": [
-      { "product_id": "p001", "name": "产品A", "quantity": 20 }
-    ]
-  },
+  "incoming": [
+    {
+      "express_code": "DD20250508001",
+      "pickup_code": "8832",
+      "products": [
+        { "product_id": "p001", "name": "产品A", "quantity": 20 }
+      ]
+    },
+    {
+      "express_code": "DD20250508002",
+      "pickup_code": "5541",
+      "products": [
+        { "product_id": "p002", "name": "产品B", "quantity": 5 }
+      ]
+    }
+  ],
   "outgoing": [
     {
       "name": "张伟",
       "phone": "13800001111",
       "address": "北京市朝阳区建国路88号",
       "products": [
-        { "product_id": "p001", "name": "产品A", "quantity": 10 }
+        { "product_id": "p001", "name": "产品A", "quantity": 10 },
+        { "product_id": "p002", "name": "产品B", "quantity": 5 }
       ],
       "notes": "工作日白天送"
     }
@@ -67,9 +77,14 @@
 - `created_by`：填表人称呼，用于追踪谁提交的订单
 - `picked_up`：是否已从快递处取回货物
 - `shipped`：是否已寄出给收件人
-- `incoming`：来件信息（一个订单号对应一批货）
+- `paid_status`：运费是否已收，boolean。默认 `false`
+- `picked_up`：货物是否已从快递处取回
+- `shipped`：货物是否已寄出给收件人
+- `incoming`：来件信息数组。一个大订单可以包含多张来件单，每张有独立的 `express_code`（内部单号）、`pickup_code`（取货时的确认码）、`products`
 - `outgoing`：收件人列表（一批货可能分寄给多人）
-- `incoming.products` 和 `outgoing[].products` 都包含 `product_id`、`name`、`quantity`
+- 数量校验跨所有来件单合并计算，与所有收件人合计对比
+
+**注意**：`incoming` 是数组，不是对象。这是本次改动的核心破坏性变更，旧格式（`incoming` 为对象）不兼容，读取时不做自动转换。
 
 ### products.json
 
@@ -159,14 +174,26 @@ admin.html 里是 `updateWithRetry`（通用版，接受 mutator 函数）。
 
 ## index.html - 客户下单页面
 
+### 页面结构
+
+页面分为上下两个明显独立的区域：
+
+**上方（可折叠）：查找 / 修改已提交订单**
+- 标题改为"查找 / 修改已提交订单"，默认折叠
+- 输入任意一个来件单号即可搜寻整个大订单（`incoming.some` 遍历）
+- 载入后表单填入订单资料，底部按钮切换为"发送修改"和"取消修改"
+
+**下方（金色边框卡片）：提交新订单**
+- 填表人称呼
+- 来件信息：每张来件单是一个独立卡片（可增删），每张卡有订单号、取货码、来件产品列表
+- 收件人信息：每个收件人是一个独立卡片（可增删）
+
 ### 功能
 
-- 填写来件信息：填表人称呼、订单号、取货码、来件产品（下拉选择 + 数量，可多行）
-- 填写收件人信息：姓名、电话、地址、产品（下拉 + 数量）、备注。可添加多个收件人
+- 一个订单可以包含多张来件单，每张独立填写
 - 空的收件人卡片自动跳过
 - 空的产品行自动跳过
-- 产品数量校验：来件产品总数 vs 收件人产品总数，不匹配时弹出确认框，用户可选择仍然提交
-- 修改订单：页面顶部可折叠区域，输入订单号搜索后载入数据到表单，底部按钮切换为"发送修改"和"取消修改"
+- 产品数量校验：所有来件单产品合计 vs 所有收件人产品合计，不匹配时弹出确认框，用户可选择仍然提交
 
 ### 安全
 
@@ -191,12 +218,14 @@ admin.html 里是 `updateWithRetry`（通用版，接受 mutator 函数）。
 子视图切换：未取货 / 已取货（按钮在工具栏右侧，刷新旁边）
 
 **未取货视图：**
-- 表格列：checkbox | 填表人 | 订单号 | 取货码 | [动态产品列] | 日期
-- 底部合计行统计每个产品的总数
+- 表格列：checkbox | 填表人 | 订单号 | 取货码 | [动态产品列] | 日期 | 已付运费
+- 每张来件单占一行，同一大订单的填表人和日期用 rowspan 合并
+- 产品数量按来件单分行显示（不合并），底部合计行统计所有来件单的产品总数
 - 工具栏按钮：生成取件单、已取货、编辑、刷新
-- 生成取件单：弹窗填写提货日期和提货人，生成 PDF 后自动在新标签页打开，同时上传到 `history_pickup/`
+- 生成取件单：弹窗填写提货日期和提货人，生成 PDF 后自动在新标签页打开，同时上传到 `history_pickup/`。PDF 里每张来件单各占一行，填表人用 rowspan 合并
 - 已取货：勾选的订单标记 `picked_up: true`
-- 编辑模式：隐藏 checkbox，每行右侧出现"修改"和"删除"按钮
+- 编辑模式：隐藏 checkbox，每个大订单右侧出现"修改"和"删除"按钮（rowspan 合并）
+- 已付运费列：checkbox，勾选时弹出确认框，确认后写入 `paid_status: true`；取消勾选直接写入 `paid_status: false`，不需确认。修改 overlay 内不含此字段
 
 **已取货视图：**
 - 同样的表格，不含合计行
@@ -208,9 +237,9 @@ admin.html 里是 `updateWithRetry`（通用版，接受 mutator 函数）。
 子视图切换：未寄出 / 已寄出
 
 **未寄出视图：**
-- 表格列：checkbox | 填表人 | 订单号 | 收件人 | 地址 | 电话 | [动态产品列] | 备注
+- 表格列：checkbox | 填表人 | 订单号 | 已付运费 | 收件人 | 地址 | 电话 | [动态产品列] | 备注
+- 订单号列显示该订单所有来件单号，换行排列。若未取货，每个单号后显示红色 `(未取货)` 标签
 - 多个收件人用 rowspan 合并填表人/订单号列
-- 订单号后面如果该订单未取货，显示红色 `(未取货)` 标签
 - 排序：已取货的订单排前面，未取货的排后面
 - 底部合计行
 - 工具栏按钮：生成寄件单、已寄出、编辑、刷新
@@ -223,17 +252,17 @@ admin.html 里是 `updateWithRetry`（通用版，接受 mutator 函数）。
 
 ### 修改订单 Overlay
 
-点击表格中的"修改"按钮弹出全屏 overlay 表单，内容和 index.html 的表单结构一致：
+点击表格中的"修改"按钮弹出全屏 overlay 表单，结构与 index.html 一致：
 
-- 填表人称呼、订单号、取货码
-- 来件产品（可增删）
+- 填表人称呼
+- 来件信息：每张来件单一张卡片（可增删）
 - 收件人列表（可增删，每个收件人有产品列表）
-- 保存时做数量校验，不匹配弹确认框
+- 保存时做数量校验（跨所有来件单合并），不匹配弹确认框
 - 校验弹窗的 z-index (960) 高于修改 overlay (950)，不会被遮挡
 
 ### 删除订单
 
-编辑模式下点"删除"弹出确认框，确认后从 `orders.json` 中移除该订单。
+编辑模式下点"删除"弹出确认框，确认框显示该订单所有来件单号，确认后从 `orders.json` 中移除该订单。
 
 ### 历史档案
 
@@ -284,6 +313,7 @@ admin.html 里是 `updateWithRetry`（通用版，接受 mutator 函数）。
 - 成功操作：`#27ae60`
 - 按钮风格：`.btn-accent`（实心金色）、`.btn-success`（实心绿色）、`.btn-outline`（描边灰色）、`.btn-danger`（实心红色）
 - 移动端响应式：700px 以下 form-row 堆叠，按钮缩小
+- index.html 的新订单区域用金色边框 (`.new-order-section`) 与查找区域视觉区分
 
 
 ## 注意事项
@@ -291,8 +321,10 @@ admin.html 里是 `updateWithRetry`（通用版，接受 mutator 函数）。
 1. `CONFIG._k` 在两个 HTML 文件中都设为 `'xxx'` 占位符，部署前必须替换
 2. 两个文件的 `CONFIG.owner`、`CONFIG.repo`、`CONFIG._k` 必须一致
 3. GitHub token 需要 repo 的读写权限
-4. 仓库必须已存在 `orders.json` 和 `products.json`，否则页面初始化会报错
-5. `history_pickup/` 和 `history_shipping/` 文件夹不需要预先创建，首次生成 PDF 时会自动创建
-6. 所有用户输入输出都必须经过 `esc()` 函数转义
-7. 所有 JSON 读写都必须用 `decodeB64()`/`encodeB64()` 处理编码
-8. PDF 文件是二进制，上传时用 `b2b64(blob)` 转 Base64，不经过 `encodeB64()`
+4. `orders.json` 必须存在且内容为 `[]`，空白文件或不存在都会导致 `JSON.parse` 报错崩溃
+5. `products.json` 同上，初始内容为 `[]` 或已有产品列表
+6. `history_pickup/` 和 `history_shipping/` 文件夹不需要预先创建，首次生成 PDF 时会自动创建
+7. 所有用户输入输出都必须经过 `esc()` 函数转义
+8. 所有 JSON 读写都必须用 `decodeB64()`/`encodeB64()` 处理编码
+9. PDF 文件是二进制，上传时用 `b2b64(blob)` 转 Base64，不经过 `encodeB64()`
+10. `incoming` 是数组，旧格式（对象）不兼容，代码内不做自动转换
