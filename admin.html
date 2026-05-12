@@ -203,7 +203,7 @@
 <div class="modal-overlay" id="deletePdfModal"><div class="confirm-box"><div class="confirm-title">确认删除档案</div><div id="deletePdfMessage" class="confirm-message"></div><div class="confirm-actions"><button class="btn btn-outline" onclick="closeModal('deletePdfModal')">取消</button><button class="btn btn-danger" onclick="doDeletePdf()">删除</button></div></div></div>
 
 <!-- 数量不匹配确认弹窗 -->
-<div class="modal-overlay" id="paidConfirmModal"><div class="confirm-box"><div class="confirm-title">确认收款</div><div id="paidConfirmMessage" class="confirm-message"></div><div class="confirm-actions"><button class="btn btn-outline" onclick="closeModal('paidConfirmModal')">取消</button><button class="btn btn-success" onclick="doPaidConfirm()">确认已收运费</button></div></div></div>
+<div class="modal-overlay" id="paidConfirmModal"><div class="confirm-box"><div class="confirm-title">确认收款</div><div id="paidConfirmMessage" class="confirm-message"></div><div class="confirm-actions"><button class="btn btn-outline" onclick="cancelPaidConfirm()">取消</button><button class="btn btn-success" onclick="doPaidConfirm()">确认已收运费</button></div></div></div>
 <div class="modal-overlay" id="qtyConfirmModal"><div class="confirm-box"><div class="confirm-title">产品数量不匹配</div><div id="qtyConfirmMessage" class="confirm-message"></div><div class="confirm-actions"><button class="btn btn-outline" onclick="closeModal('qtyConfirmModal')">取消</button><button class="btn btn-accent" onclick="confirmQtyMismatch()">仍然保存</button></div></div></div>
 
 <!-- 修改订单 overlay -->
@@ -334,9 +334,9 @@ function renderIncoming(){
 
   let h='<table class="data-table"><thead><tr>';
   if(isActive&&!editMode) h+='<th><input type="checkbox" onchange="togAll(\'incoming\',this.checked)"></th>';
-  h+='<th>填表人</th><th>订单号</th><th>取货码</th><th>已付运费</th>';
+  h+='<th>填表人</th><th>订单号</th><th>取货码</th>';
   pids.forEach(id=>{h+=`<th class="qty-cell">${esc(pn(id))}</th>`;});
-  h+='<th>日期</th>';
+  h+='<th>日期</th><th>已付运费</th>';
   if(editMode) h+='<th>操作</th>';
   h+='</tr></thead><tbody>';
 
@@ -396,9 +396,9 @@ function renderShipping(){
   const pids=prodIdsOut(list);const tot={};pids.forEach(id=>{tot[id]=0;});
   let h='<table class="data-table"><thead><tr>';
   if(isActive&&!editMode) h+='<th><input type="checkbox" onchange="togAll(\'shipping\',this.checked)"></th>';
-  h+='<th>填表人</th><th>订单号</th><th>收件人</th><th>地址</th><th>电话</th><th>已付运费</th>';
+  h+='<th>填表人</th><th>订单号</th><th>收件人</th><th>地址</th><th>电话</th>';
   pids.forEach(id=>{h+=`<th class="qty-cell">${esc(pn(id))}</th>`;});
-  h+='<th>备注</th>';
+  h+='<th>备注</th><th>已付运费</th>';
   if(editMode) h+='<th>操作</th>';
   h+='</tr></thead><tbody>';
   list.forEach(o=>{
@@ -413,29 +413,29 @@ function renderShipping(){
       if(ri===0){
         if(isActive&&!editMode) h+=`<td rowspan="${rl}" style="vertical-align:middle"><input type="checkbox" data-group="shipping" value="${o.id}"></td>`;
         h+=`<td rowspan="${rl}" style="vertical-align:middle">${esc(o.created_by||'')}</td><td rowspan="${rl}" style="vertical-align:middle">${allCodes}</td>`;
-        h+=`<td rowspan="${rl}" style="vertical-align:middle;text-align:center"><input type="checkbox" ${o.paid_status?'checked':''} onchange="promptPaidStatus('${o.id}',this)"></td>`;
       }
       h+=`<td>${esc(r.name)}</td><td>${esc(r.address)}</td><td>${esc(r.phone)}</td>`;
       pids.forEach(id=>{const x=r.products.find(z=>z.product_id===id);const q=x?x.quantity:0;tot[id]+=q;h+=`<td class="qty-cell">${q||''}</td>`;});
       h+=`<td style="font-size:0.78rem">${esc(r.notes||'')}</td>`;
+      if(ri===0) h+=`<td rowspan="${rl}" style="vertical-align:middle;text-align:center"><input type="checkbox" ${o.paid_status?'checked':''} onchange="promptPaidStatus('${o.id}',this)"></td>`;
       if(editMode&&ri===0) h+=`<td rowspan="${rl}" style="vertical-align:middle;white-space:nowrap">${actionHtml}</td>`;
       h+='</tr>';
     });
     if(!o.outgoing.length){
       h+='<tr>';
       if(isActive&&!editMode) h+=`<td><input type="checkbox" data-group="shipping" value="${o.id}"></td>`;
-      h+=`<td>${esc(o.created_by||'')}</td><td>${allCodes}</td><td></td><td colspan="${3+pids.length+1}">无收件人</td>`;
+      h+=`<td>${esc(o.created_by||'')}</td><td>${allCodes}</td><td colspan="${3+pids.length+1}">无收件人</td><td></td>`;
       if(editMode) h+=`<td style="white-space:nowrap">${actionHtml}</td>`;
       h+='</tr>';
     }
   });
   if(isActive){
-    const fixedCols=6;
+    const fixedCols=5;
     h+='<tr class="total-row">';
     if(!editMode) h+='<td></td>';
     h+=`<td colspan="${fixedCols-1}"></td><td>合计</td>`;
     pids.forEach(id=>{h+=`<td class="qty-cell">${tot[id]}</td>`;});
-    h+='<td></td>';
+    h+='<td></td><td></td>';
     if(editMode) h+='<td></td>';
     h+='</tr>';
   }
@@ -803,24 +803,32 @@ function switchTab(name){
 function closeModal(id){document.getElementById(id).classList.remove('active');}
 
 // ===== Paid Status =====
-let pendingPaidId=null,pendingPaidCheckbox=null;
+let pendingPaidId=null,pendingPaidCheckbox=null,pendingPaidValue=null;
 function promptPaidStatus(id,checkbox){
   const o=orders.find(x=>x.id===id);if(!o)return;
-  // If unchecking (marking as unpaid), skip confirm and just save
-  if(!checkbox.checked){
-    savePaidStatus(id,false);return;
-  }
+  const newVal=checkbox.checked;
   pendingPaidId=id;
   pendingPaidCheckbox=checkbox;
+  pendingPaidValue=newVal;
   const codes=o.incoming.map(inc=>inc.express_code).join(', ');
-  document.getElementById('paidConfirmMessage').innerHTML=`确认订单 <strong>${esc(codes)}</strong> 的运费已收？`;
+  const msg=newVal
+    ?`确认订单 <strong>${esc(codes)}</strong> 的运费已收？`
+    :`确认取消订单 <strong>${esc(codes)}</strong> 的已付运费状态？`;
+  document.getElementById('paidConfirmMessage').innerHTML=msg;
+  const confirmBtn=document.querySelector('#paidConfirmModal .btn-success');
+  confirmBtn.textContent=newVal?'确认已收运费':'确认取消';
   document.getElementById('paidConfirmModal').classList.add('active');
+}
+function cancelPaidConfirm(){
+  if(pendingPaidCheckbox)pendingPaidCheckbox.checked=!pendingPaidValue;
+  pendingPaidId=null;pendingPaidCheckbox=null;pendingPaidValue=null;
+  closeModal('paidConfirmModal');
 }
 function doPaidConfirm(){
   closeModal('paidConfirmModal');
-  if(!pendingPaidId)return;
-  savePaidStatus(pendingPaidId,true);
-  pendingPaidId=null;pendingPaidCheckbox=null;
+  if(pendingPaidId===null)return;
+  savePaidStatus(pendingPaidId,pendingPaidValue);
+  pendingPaidId=null;pendingPaidCheckbox=null;pendingPaidValue=null;
 }
 async function savePaidStatus(id,val){
   // Revert checkbox optimistically if needed
