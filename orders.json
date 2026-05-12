@@ -35,5 +35,85 @@
       }
     ],
     "paid_status": false
+  },
+  {
+    "id": "ORD_1778595963017_kowl",
+    "created_at": "2026-05-12T14:26:03.017Z",
+    "created_by": "sunny",
+    "paid_status": false,
+    "picked_up": false,
+    "shipped": false,
+    "incoming": [
+      {
+        "express_code": "640545",
+        "pickup_code": "779476",
+        "products": [
+          {
+            "product_id": "沛泉Reserve",
+            "name": "沛泉 Reserve",
+            "quantity": 24
+          },
+          {
+            "product_id": "修复霜Night Repair",
+            "name": "修复霜Night Repair",
+            "quantity": 6
+          }
+        ]
+      }
+    ],
+    "outgoing": [
+      {
+        "name": "诸谨华",
+        "phone": "13601701706",
+        "address": "上海市浦东新区成山路1488弄138号",
+        "products": [
+          {
+            "product_id": "沛泉Reserve",
+            "name": "沛泉 Reserve",
+            "quantity": 12
+          }
+        ],
+        "notes": ""
+      },
+      {
+        "name": "蔡俪悦",
+        "phone": "19285732283",
+        "address": "广东省东莞市洪梅镇洪梅镇洪屋涡市场",
+        "products": [
+          {
+            "product_id": "沛泉Reserve",
+            "name": "沛泉 Reserve",
+            "quantity": 6
+          }
+        ],
+        "notes": ""
+      },
+      {
+        "name": "莫炎芳",
+        "phone": "18576118077",
+        "address": "中山市西区广丰工业大道50号奥园二期三区1栋2101",
+        "products": [
+          {
+            "product_id": "沛泉Reserve",
+            "name": "沛泉 Reserve",
+            "quantity": 6
+          }
+        ],
+        "notes": ""
+      },
+      {
+        "name": "庄敏小姐",
+        "phone": "13802947781",
+        "address": "广州市越秀区淘金路136号803庄敏小姐138 0294 7781",
+        "products": [
+          {
+            "product_id": "修复霜Night Repair",
+            "name": "修复霜Night Repair",
+            "quantity": 6
+          }
+        ],
+        "notes": ""
+      }
+    ]
   }
 ]
