@@ -54,8 +54,8 @@
             "quantity": 24
           },
           {
-            "product_id": "修复霜Night Repair",
-            "product_name": "修复霜Night Repair",
+            "product_id": "修复霜/晚霜",
+            "product_name": "修复霜/晚霜Night Repair",
             "quantity": 6
           }
         ]
@@ -107,8 +107,8 @@
         "address": "广州市越秀区淘金路136号803庄敏小姐138 0294 7781",
         "products": [
           {
-            "product_id": "修复霜Night Repair",
-            "product_name": "修复霜Night Repair",
+            "product_id": "修复霜/晚霜",
+            "product_name": "修复霜/晚霜Night Repair",
             "quantity": 6
           }
         ],
@@ -134,8 +134,8 @@
             "quantity": 24
           },
           {
-            "product_id": "修复霜Night Repair",
-            "product_name": "修复霜Night Repair",
+            "product_id": "修复霜/晚霜",
+            "product_name": "修复霜/晚霜Night Repair",
             "quantity": 6
           }
         ]
@@ -179,8 +179,8 @@
             "quantity": 12
           },
           {
-            "product_id": "修复霜Night Repair",
-            "product_name": "修复霜Night Repair",
+            "product_id": "修复霜/晚霜",
+            "product_name": "修复霜/晚霜Night Repair",
             "quantity": 6
           }
         ],
