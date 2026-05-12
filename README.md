@@ -75,11 +75,9 @@
 
 - `id`：格式 `ORD_{timestamp}_{random4}`，由 index.html 在提交时生成
 - `created_by`：填表人称呼，用于追踪谁提交的订单
-- `picked_up`：是否已从快递处取回货物
-- `shipped`：是否已寄出给收件人
+- `picked_up`：是否已从快递处取回货物，boolean。初次提交时默认 `false`
+- `shipped`：是否已寄出给收件人，boolean。初次提交时默认 `false`
 - `paid_status`：运费是否已收，boolean。默认 `false`
-- `picked_up`：货物是否已从快递处取回
-- `shipped`：货物是否已寄出给收件人
 - `incoming`：来件信息数组。一个大订单可以包含多张来件单，每张有独立的 `express_code`（内部单号）、`pickup_code`（取货时的确认码）、`products`
 - `outgoing`：收件人列表（一批货可能分寄给多人）
 - 数量校验跨所有来件单合并计算，与所有收件人合计对比
