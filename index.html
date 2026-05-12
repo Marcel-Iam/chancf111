@@ -727,7 +727,7 @@ function esc(v = '') {
 function productOptions(selectedId = '') {
   return products.map(p => {
     const selected = p.id === selectedId ? 'selected' : '';
-    return `<option value="${esc(p.id)}" ${selected}>${esc(p.name)}</option>`;
+    return `<option value="${esc(p.id)}" ${selected}>${esc(p.product_name)}</option>`;
   }).join('');
 }
 
@@ -930,7 +930,7 @@ function getQuantityMismatches() {
     const incomingQty = inc[id] || 0;
     const outgoingQty = out[id] || 0;
     if (incomingQty !== outgoingQty) {
-      const name = products.find(p => p.id === id)?.name || id;
+      const name = products.find(p => p.id === id)?.product_name || id;
       mismatches.push(`${name}: 来件 ${incomingQty}, 收件合计 ${outgoingQty}`);
     }
   }
@@ -1010,7 +1010,7 @@ function collectOrderData(existingOrder = null) {
         const prod = products.find(p => p.id === sel.value);
         blockProducts.push({
           product_id: sel.value,
-          name: prod ? prod.name : sel.value,
+          product_name: prod ? prod.product_name : sel.value,
           quantity: q
         });
       }
@@ -1049,7 +1049,7 @@ function collectOrderData(existingOrder = null) {
         const prod = products.find(p => p.id === sel.value);
         rp.push({
           product_id: sel.value,
-          name: prod ? prod.name : sel.value,
+          product_name: prod ? prod.product_name : sel.value,
           quantity: q
         });
       }

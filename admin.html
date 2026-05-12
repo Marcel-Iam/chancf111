@@ -282,7 +282,7 @@ function prodIdsIn(list){
   return[...s].sort();
 }
 function prodIdsOut(list){const s=new Set();list.forEach(o=>o.outgoing.forEach(r=>r.products.forEach(p=>s.add(p.product_id))));return[...s].sort();}
-function pn(id){const p=products.find(x=>x.id===id);return p?p.name:id;}
+function pn(id){const p=products.find(x=>x.id===id);return p?p.product_name:id;}
 function sel(g){return[...document.querySelectorAll(`input[data-group="${g}"]:checked`)].map(c=>c.value);}
 function togAll(g,v){document.querySelectorAll(`input[data-group="${g}"]`).forEach(c=>{c.checked=v;});}
 
@@ -489,7 +489,7 @@ async function doDeleteOrder(){
 }
 
 // ===== Edit Overlay =====
-function productOpts(selectedId=''){return products.map(p=>{const s=p.id===selectedId?'selected':'';return`<option value="${esc(p.id)}" ${s}>${esc(p.name)}</option>`;}).join('');}
+function productOpts(selectedId=''){return products.map(p=>{const s=p.id===selectedId?'selected':'';return`<option value="${esc(p.id)}" ${s}>${esc(p.product_name)}</option>`;}).join('');}
 
 function openEditOverlay(id){
   const o=orders.find(x=>x.id===id);if(!o)return;
@@ -574,7 +574,7 @@ function collectEditData(){
     const blockProducts=[];
     block.querySelectorAll('.eib-products .e-product-line').forEach(l=>{
       const s=l.querySelector('select');const q=parseInt(l.querySelector('input').value)||0;
-      if(s.value&&q>0){const prod=products.find(p=>p.id===s.value);blockProducts.push({product_id:s.value,name:prod?prod.name:s.value,quantity:q});}
+      if(s.value&&q>0){const prod=products.find(p=>p.id===s.value);blockProducts.push({product_id:s.value,product_name:prod?prod.product_name:s.value,quantity:q});}
     });
     if(!blockProducts.length){showToast('每张来件单至少需要一个产品','error');return null;}
     incoming.push({express_code:expressCode,pickup_code:pickupCode,products:blockProducts});
@@ -590,7 +590,7 @@ function collectEditData(){
     const rp=[];
     card.querySelectorAll('.r-products .e-product-line').forEach(l=>{
       const s=l.querySelector('select');const q=parseInt(l.querySelector('input').value)||0;
-      if(s.value&&q>0){const prod=products.find(p=>p.id===s.value);rp.push({product_id:s.value,name:prod?prod.name:s.value,quantity:q});}
+      if(s.value&&q>0){const prod=products.find(p=>p.id===s.value);rp.push({product_id:s.value,product_name:prod?prod.product_name:s.value,quantity:q});}
     });
     if(name||phone||address||rp.length||notes) outgoing.push({name,phone,address,products:rp,notes});
   });
@@ -778,16 +778,16 @@ async function doDeletePdf(){
 
 // ===== Products =====
 async function loadProducts(){const d=await fetchFileWithSha('products.json');products=d.content;renderProducts();}
-function syncProductsFromDOM(){const rows=document.querySelectorAll('#productList .product-row');const synced=[];for(const row of rows){const idEl=row.querySelector('[data-field="id"]');if(!idEl)continue;synced.push({id:idEl.value,name:row.querySelector('[data-field="name"]').value});}products=synced;}
+function syncProductsFromDOM(){const rows=document.querySelectorAll('#productList .product-row');const synced=[];for(const row of rows){const idEl=row.querySelector('[data-field="id"]');if(!idEl)continue;synced.push({id:idEl.value,product_name:row.querySelector('[data-field="product_name"]').value});}products=synced;}
 function renderProducts(){
   const header='<div class="product-row" style="margin-bottom:4px;"><span style="flex:1;font-size:0.78rem;color:var(--text-light);padding-left:2px;">简称 (ID)</span><span style="flex:1;font-size:0.78rem;color:var(--text-light);padding-left:2px;">全称</span><span style="width:52px;"></span></div>';
-  document.getElementById('productList').innerHTML=header+products.map((p,i)=>`<div class="product-row"><input type="text" value="${esc(p.id)}" data-idx="${i}" data-field="id" placeholder="产品ID"><input type="text" value="${esc(p.name)}" data-idx="${i}" data-field="name" placeholder="产品名称"><button class="btn btn-danger" onclick="removeProduct(${i})">删除</button></div>`).join('');
+  document.getElementById('productList').innerHTML=header+products.map((p,i)=>`<div class="product-row"><input type="text" value="${esc(p.id)}" data-idx="${i}" data-field="id" placeholder="产品ID"><input type="text" value="${esc(p.product_name)}" data-idx="${i}" data-field="product_name" placeholder="产品名称"><button class="btn btn-danger" onclick="removeProduct(${i})">删除</button></div>`).join('');
 }
-function addProductRow(){syncProductsFromDOM();products.push({id:'p'+String(products.length+1).padStart(3,'0'),name:''});renderProducts();const inp=document.querySelectorAll('#productList input[data-field="name"]');if(inp.length)inp[inp.length-1].focus();}
+function addProductRow(){syncProductsFromDOM();products.push({id:'p'+String(products.length+1).padStart(3,'0'),product_name:''});renderProducts();const inp=document.querySelectorAll('#productList input[data-field="product_name"]');if(inp.length)inp[inp.length-1].focus();}
 function removeProduct(i){syncProductsFromDOM();products.splice(i,1);renderProducts();}
 async function saveProducts(){
   const rows=document.querySelectorAll('#productList .product-row');const upd=[];
-  for(const row of rows){const idEl=row.querySelector('[data-field="id"]');if(!idEl)continue;const id=idEl.value.trim();const nm=row.querySelector('[data-field="name"]').value.trim();if(id&&nm)upd.push({id,name:nm});}
+  for(const row of rows){const idEl=row.querySelector('[data-field="id"]');if(!idEl)continue;const id=idEl.value.trim();const nm=row.querySelector('[data-field="product_name"]').value.trim();if(id&&nm)upd.push({id,product_name:nm});}
   if(!upd.length){showToast('至少保留一个产品','error');return;}
   showLoading(true);
   try{const r=await updateWithRetry('products.json',()=>upd,'更新产品列表');products=r.content;renderProducts();showToast('产品列表已保存','success');}catch(e){showToast('保存失败: '+e.message,'error');}
