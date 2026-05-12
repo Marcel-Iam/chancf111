@@ -75,8 +75,8 @@
 
 - `id`：格式 `ORD_{timestamp}_{random4}`，由 index.html 在提交时生成
 - `created_by`：填表人称呼，用于追踪谁提交的订单
-- `picked_up`：是否已从快递处取回货物，boolean。初次提交时默认 `false`
-- `shipped`：是否已寄出给收件人，boolean。初次提交时默认 `false`
+- `picked_up`：是否已从快递处取回货物，boolean。默认 `false`
+- `shipped`：是否已寄出给收件人，boolean。默认 `false`
 - `paid_status`：运费是否已收，boolean。默认 `false`
 - `incoming`：来件信息数组。一个大订单可以包含多张来件单，每张有独立的 `express_code`（内部单号）、`pickup_code`（取货时的确认码）、`products`
 - `outgoing`：收件人列表（一批货可能分寄给多人）
@@ -219,6 +219,7 @@ admin.html 里是 `updateWithRetry`（通用版，接受 mutator 函数）。
 - 表格列：checkbox | 填表人 | 订单号 | 取货码 | [动态产品列] | 日期 | 已付运费
 - 每张来件单占一行，同一大订单的填表人和日期用 rowspan 合并
 - 产品数量按来件单分行显示（不合并），底部合计行统计所有来件单的产品总数
+- 动态产品列表头显示产品短码（ID），不显示全名，避免表格过宽。PDF 取件单同样使用短码。数量校验提示显示产品全名
 - 工具栏按钮：生成取件单、已取货、编辑、刷新
 - "未取货"子标签页实时显示未取货订单数量，格式为 `未取货 (n)`
 - 生成取件单：弹窗填写提货日期和提货人，生成 PDF 后自动在新标签页打开，同时上传到 `history_pickup/`。PDF 里每张来件单各占一行，填表人用 rowspan 合并
