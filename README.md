@@ -45,14 +45,14 @@
       "express_code": "DD20250508001",
       "pickup_code": "8832",
       "products": [
-        { "product_id": "p001", "name": "产品A", "quantity": 20 }
+        { "product_id": "p001", "product_name": "产品A", "quantity": 20 }
       ]
     },
     {
       "express_code": "DD20250508002",
       "pickup_code": "5541",
       "products": [
-        { "product_id": "p002", "name": "产品B", "quantity": 5 }
+        { "product_id": "p002", "product_name": "产品B", "quantity": 5 }
       ]
     }
   ],
@@ -62,8 +62,8 @@
       "phone": "13800001111",
       "address": "北京市朝阳区建国路88号",
       "products": [
-        { "product_id": "p001", "name": "产品A", "quantity": 10 },
-        { "product_id": "p002", "name": "产品B", "quantity": 5 }
+        { "product_id": "p001", "product_name": "产品A", "quantity": 10 },
+        { "product_id": "p002", "product_name": "产品B", "quantity": 5 }
       ],
       "notes": "工作日白天送"
     }
@@ -88,12 +88,12 @@
 
 ```json
 [
-  { "id": "p001", "name": "产品A" },
-  { "id": "p002", "name": "产品B" }
+  { "id": "p001", "product_name": "产品A" },
+  { "id": "p002", "product_name": "产品B" }
 ]
 ```
 
-大约 20 个产品。`id` 是短码（用于程序内部匹配），`name` 是中文全称（用于显示）。
+大约 20 个产品。`id` 是短码（用于程序内部匹配），`product_name` 是中文全称（用于显示）。
 
 ### history_pickup/index.json 和 history_shipping/index.json
 
