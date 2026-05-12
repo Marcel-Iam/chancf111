@@ -223,6 +223,42 @@
       "notes": ""
     }
   ]
+},
+    {
+  "id": "ORD_20260512_5678",
+  "created_at": "2026-05-12T14:26:03.017Z",
+  "created_by": "sunny",
+  "paid_status": false,
+  "picked_up": false,
+  "shipped": false,
+  "incoming": [
+    {
+      "express_code": "636536",
+      "pickup_code": "723084",
+      "products": [
+        {
+          "product_id": "精华serum",
+          "name": "精华露 Serum",
+          "quantity": 6
+        }
+      ]
+    }
+  ],
+  "outgoing": [
+    {
+      "name": "禤育敏",
+      "phone": "13903077266",
+      "address": "广州番禺南浦海龙湾山水轩一梯102",
+      "products": [
+        {
+          "product_id": "精华serum",
+          "name": "精华露 Serum",
+          "quantity": 6
+        }
+      ],
+      "notes": ""
+    }
+  ]
 }
 
     
