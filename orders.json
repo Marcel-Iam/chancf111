@@ -282,6 +282,17 @@
         ]
       },
       {
+        "express_code": "637212",
+        "pickup_code": "820992",
+        "products": [
+          {
+            "product_id": "精华serum",
+            "name": "精华露 Serum",
+            "quantity": 6
+          }
+        ]
+      },
+      {
         "express_code": "637191",
         "pickup_code": "426945",
         "products": [
@@ -339,17 +350,6 @@
       {
         "express_code": "635968",
         "pickup_code": "286969",
-        "products": [
-          {
-            "product_id": "精华serum",
-            "name": "精华露 Serum",
-            "quantity": 6
-          }
-        ]
-      },
-      {
-        "express_code": "637212",
-        "pickup_code": "820992",
         "products": [
           {
             "product_id": "精华serum",
