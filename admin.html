@@ -777,20 +777,135 @@ async function doDeletePdf(){
 }
 
 // ===== Products =====
-async function loadProducts(){const d=await fetchFileWithSha('products.json');products=d.content;renderProducts();}
-function syncProductsFromDOM(){const rows=document.querySelectorAll('#productList .product-row');const synced=[];for(const row of rows){const idEl=row.querySelector('[data-field="id"]');if(!idEl)continue;synced.push({id:idEl.value,product_name:row.querySelector('[data-field="product_name"]').value});}products=synced;}
+function genUid(){return'uid_'+Date.now()+'_'+Math.random().toString(36).substr(2,4);}
+
+async function loadProducts(){
+  const d=await fetchFileWithSha('products.json');
+  // Add _uid in memory for any product missing one (does not write back yet)
+  products=d.content.map(p=>p._uid?p:{...p,_uid:genUid()});
+  renderProducts();
+}
+
+function syncProductsFromDOM(){
+  // Sync id and product_name from DOM back into memory, preserving _uid
+  const rows=document.querySelectorAll('#productList .product-row');
+  const synced=[];
+  for(const row of rows){
+    const idEl=row.querySelector('[data-field="id"]');if(!idEl)continue;
+    const uid=row.dataset.uid;
+    const existing=products.find(p=>p._uid===uid)||{};
+    synced.push({
+      _uid: uid||genUid(),
+      id: idEl.value,
+      product_name: row.querySelector('[data-field="product_name"]').value
+    });
+  }
+  products=synced;
+}
+
 function renderProducts(){
   const header='<div class="product-row" style="margin-bottom:4px;"><span style="flex:1;font-size:0.78rem;color:var(--text-light);padding-left:2px;">简称 (ID)</span><span style="flex:1;font-size:0.78rem;color:var(--text-light);padding-left:2px;">全称</span><span style="width:52px;"></span></div>';
-  document.getElementById('productList').innerHTML=header+products.map((p,i)=>`<div class="product-row"><input type="text" value="${esc(p.id)}" data-idx="${i}" data-field="id" placeholder="产品ID"><input type="text" value="${esc(p.product_name)}" data-idx="${i}" data-field="product_name" placeholder="产品名称"><button class="btn btn-danger" onclick="removeProduct(${i})">删除</button></div>`).join('');
+  document.getElementById('productList').innerHTML=header+products.map((p,i)=>{
+    const uid=esc(p._uid||'');
+    return`<div class="product-row" data-uid="${uid}"><input type="text" value="${esc(p.id)}" data-idx="${i}" data-field="id" placeholder="产品ID"><input type="text" value="${esc(p.product_name)}" data-idx="${i}" data-field="product_name" placeholder="产品名称"><button class="btn btn-danger" onclick="removeProduct(${i})">删除</button></div>`;
+  }).join('');
 }
-function addProductRow(){syncProductsFromDOM();products.push({id:'p'+String(products.length+1).padStart(3,'0'),product_name:''});renderProducts();const inp=document.querySelectorAll('#productList input[data-field="product_name"]');if(inp.length)inp[inp.length-1].focus();}
+
+function addProductRow(){
+  syncProductsFromDOM();
+  products.push({_uid:genUid(),id:'p'+String(products.length+1).padStart(3,'0'),product_name:''});
+  renderProducts();
+  const inp=document.querySelectorAll('#productList input[data-field="product_name"]');
+  if(inp.length)inp[inp.length-1].focus();
+}
+
 function removeProduct(i){syncProductsFromDOM();products.splice(i,1);renderProducts();}
+
 async function saveProducts(){
-  const rows=document.querySelectorAll('#productList .product-row');const upd=[];
-  for(const row of rows){const idEl=row.querySelector('[data-field="id"]');if(!idEl)continue;const id=idEl.value.trim();const nm=row.querySelector('[data-field="product_name"]').value.trim();if(id&&nm)upd.push({id,product_name:nm});}
-  if(!upd.length){showToast('至少保留一个产品','error');return;}
+  // Capture old list before syncing DOM (needed for change detection)
+  const oldList=products.map(p=>({...p}));
+  syncProductsFromDOM();
+
+  // 1. Collect new list from DOM
+  const rows=document.querySelectorAll('#productList .product-row');
+  const newList=[];
+  for(const row of rows){
+    const idEl=row.querySelector('[data-field="id"]');if(!idEl)continue;
+    const id=idEl.value.trim();
+    const nm=row.querySelector('[data-field="product_name"]').value.trim();
+    const uid=row.dataset.uid;
+    if(!id||!nm){showToast('产品 ID 和名称不可为空','error');return;}
+    newList.push({_uid:uid||genUid(),id,product_name:nm});
+  }
+  if(!newList.length){showToast('至少保留一个产品','error');return;}
+
+  // 2. Check duplicate ids within new list
+  const idSet=new Set();
+  for(const p of newList){
+    if(idSet.has(p.id)){showToast(`产品 ID "${p.id}" 重复，请修正后再保存`,'error');return;}
+    idSet.add(p.id);
+  }
+
+  // 3. Build change map: _uid → { old_id, new_id, old_name, new_name }
+  // Use in-memory products (before sync) as the old list
+  const changeMap={};
+  for(const np of newList){
+    const op=oldList.find(p=>p._uid===np._uid);
+    if(!op)continue; // new product, no migration needed
+    if(op.id!==np.id||op.product_name!==np.product_name){
+      changeMap[np._uid]={old_id:op.id,new_id:np.id,old_name:op.product_name,new_name:np.product_name};
+    }
+  }
+
+  // 4. Check new ids don't collide with other products' old ids
+  for(const uid in changeMap){
+    const ch=changeMap[uid];
+    if(ch.old_id===ch.new_id)continue; // id didn't change
+    // Check if new_id matches any old id that belongs to a DIFFERENT product
+    const conflict=oldList.find(p=>p.id===ch.new_id&&p._uid!==uid);
+    if(conflict){
+      showToast(`产品 ID "${ch.new_id}" 与现有产品 "${conflict.product_name}" 冲突，无法保存`,'error');
+      return;
+    }
+  }
+
+  const hasChanges=Object.keys(changeMap).length>0;
+
   showLoading(true);
-  try{const r=await updateWithRetry('products.json',()=>upd,'更新产品列表');products=r.content;renderProducts();showToast('产品列表已保存','success');}catch(e){showToast('保存失败: '+e.message,'error');}
+  try{
+    // 5. If there are id/name changes, update orders.json first
+    if(hasChanges){
+      await updateWithRetry('orders.json', orders=>{
+        return orders.map(order=>{
+          const updIncoming=order.incoming.map(inc=>({
+            ...inc,
+            products:inc.products.map(p=>{
+              const ch=Object.values(changeMap).find(c=>c.old_id===p.product_id);
+              if(!ch)return p;
+              return{...p,product_id:ch.new_id,product_name:ch.new_name};
+            })
+          }));
+          const updOutgoing=order.outgoing.map(r=>({
+            ...r,
+            products:r.products.map(p=>{
+              const ch=Object.values(changeMap).find(c=>c.old_id===p.product_id);
+              if(!ch)return p;
+              return{...p,product_id:ch.new_id,product_name:ch.new_name};
+            })
+          }));
+          return{...order,incoming:updIncoming,outgoing:updOutgoing};
+        });
+      },'产品变更，同步订单');
+    }
+
+    // 6. Write products.json
+    const r=await updateWithRetry('products.json',()=>newList,'更新产品列表');
+    products=r.content;
+    renderProducts();
+    showToast(hasChanges?'产品列表已保存，订单已同步更新':'产品列表已保存','success');
+  }catch(e){
+    showToast('保存失败: '+e.message,'error');
+  }
   showLoading(false);
 }
 
