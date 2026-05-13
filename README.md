@@ -88,12 +88,12 @@
 
 ```json
 [
-  { "id": "p001", "product_name": "产品A" },
-  { "id": "p002", "product_name": "产品B" }
+  { "_uid": "uid_1715200000001_a1b2", "id": "p001", "product_name": "产品A" },
+  { "_uid": "uid_1715200000002_c3d4", "id": "p002", "product_name": "产品B" }
 ]
 ```
 
-大约 20 个产品。`id` 是短码（用于程序内部匹配），`product_name` 是中文全称（用于显示）。
+大约 20 个产品。`_uid` 是产品的永久唯一标识符，创建时生成，之后不变，用于追踪产品改名或改 id 时的对应关系。`id` 是短码（用于程序内部匹配和 PDF 显示），`product_name` 是中文全称（用于显示）。
 
 ### history_pickup/index.json 和 history_shipping/index.json
 
@@ -279,7 +279,13 @@ admin.html 里是 `updateWithRetry`（通用版，接受 mutator 函数）。
 - 表格显示所有产品，列标题为"简称 (ID)"和"全称"
 - 可增删产品行
 - 编辑产品时不会丢失未保存的输入（增删行前先同步 DOM 到内存）
-- 保存时写入 `products.json`
+- 每个产品有一个 `_uid`，创建时生成，永远不变。`_uid` 不显示在表格里，只存在内存和 `products.json` 里
+- 保存时的检查流程：
+  1. 新列表内有重复 `id` → 报错阻断
+  2. 改后的 `id` 撞上其他产品的旧 `id` → 报错阻断
+  3. 无冲突，用 `_uid` 配对新旧产品，找出 `id` 或 `product_name` 有变更的产品
+  4. 有变更时先写 `orders.json`（同步所有订单里对应产品的 `product_id` 和 `product_name`），成功后才写 `products.json`
+- 首次保存会给现有产品补上 `_uid` 并写入文件。在此之前如果改了产品内容，变更检测无法配对，不会同步到订单。建议部署后先不改任何产品，直接点一次保存让 `_uid` 写入
 
 ### PDF 生成
 
