@@ -447,16 +447,24 @@
       {
         "name": "李春燕",
         "phone": "18935116519",
-        "address": "山西省太原市晋源区丽泽花苑小区",
+        "address": "山西省太原市晋源区滨河西路335号丽泽花苑小区",
+        "products": [
+          {
+            "product_id": "美体霜",
+            "product_name": "美体霜 Body Renewal",
+            "quantity": 6
+          }
+        ],
+        "notes": ""
+      },
+      {
+        "name": "郑蓉",
+        "phone": "13306871468",
+        "address": "浙江省乐清市城南街道新世纪花园紫荆苑9幢602室",
         "products": [
           {
             "product_id": "敏动力Mind",
             "product_name": "敏动力 Mind",
-            "quantity": 6
-          },
-          {
-            "product_id": "美体霜",
-            "product_name": "美体霜 Body Renewal",
             "quantity": 6
           }
         ],
