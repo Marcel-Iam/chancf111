@@ -417,5 +417,51 @@
         "notes": ""
       }
     ]
+  },
+  {
+    "id": "ORD_1779322127962_ngz0",
+    "created_at": "2026-05-21T00:08:47.962Z",
+    "created_by": "婧儿",
+    "paid_status": false,
+    "picked_up": false,
+    "shipped": false,
+    "incoming": [
+      {
+        "express_code": "638000",
+        "pickup_code": "305016",
+        "products": [
+          {
+            "product_id": "敏动力Mind",
+            "product_name": "敏动力 Mind",
+            "quantity": 6
+          },
+          {
+            "product_id": "美体霜",
+            "product_name": "美体霜 Body Renewal",
+            "quantity": 6
+          }
+        ]
+      }
+    ],
+    "outgoing": [
+      {
+        "name": "李春燕",
+        "phone": "18935116519",
+        "address": "山西省太原市晋源区丽泽花苑小区",
+        "products": [
+          {
+            "product_id": "敏动力Mind",
+            "product_name": "敏动力 Mind",
+            "quantity": 6
+          },
+          {
+            "product_id": "美体霜",
+            "product_name": "美体霜 Body Renewal",
+            "quantity": 6
+          }
+        ],
+        "notes": ""
+      }
+    ]
   }
 ]
